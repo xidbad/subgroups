@@ -1,0 +1,14 @@
+name = "SL"
+version = "0.1.0"
+defaultTargets = ["sl"]
+
+[[lean_lib]]
+name = "SL"
+
+[[lean_exe]]
+name = "sl"
+root = "Main"
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4"
