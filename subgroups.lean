@@ -119,10 +119,9 @@ lemma pow_ne_one (k : ℕ) (hk : 0 < k ∧ k < n) (hlt : 1 < n) :
 -- 3. この部分群が位数 n の巡回群であることを示す
 theorem finite_cyclic_subgroup_exists (hn : n ≠ 0) :
     ∃ (G : Subgroup SL(2, ℂ)), IsCyclic G ∧ Nat.card G = n := by
-  -- let G := cyclicSubgroup n
   use cyclicSubgroup n
   constructor
-  · exact Subgroup.isCyclic_zpowers (M n) -- zpowers で生成されているので定義から巡回群
+  · exact Subgroup.isCyclic_zpowers (M n)        -- zpowers で生成されているので定義から巡回群
   · rw [cyclicSubgroup, Nat.card_zpowers (M n)]  -- M n のみで生成される → 位数が元の位数と等しい
     · rw [orderOf_eq_iff]
       constructor
@@ -134,11 +133,18 @@ theorem finite_cyclic_subgroup_exists (hn : n ≠ 0) :
         <;> exact Nat.cast_ne_zero.mpr hn
       · intro k hk kpos heq
         rw [M] at heq
-
-        have h : (diagonal ![ζ n, (ζ n)⁻¹]) ^ k = diagonal ![ζ n ^ k, ((ζ n)⁻¹) ^ k] := by
-          simp [diagonal_pow]
-
-        sorry
+        have h : ζ n ^ k = 1 := by
+          apply_fun (fun M : SL(2, ℂ) => (M : Matrix (Fin 2) (Fin 2) ℂ) 0 0) at heq
+          simp [one_apply_eq, diagonal_pow] at heq
+          exact heq
+        contrapose! h
+        rw [ζ]
+        apply pow_ne_one
+        use kpos
+        contrapose! h
+        interval_cases n
+        · linarith
+        · linarith
       · exact Nat.zero_lt_of_ne_zero hn
 
 
@@ -335,8 +341,7 @@ instance SU2 : Subgroup SL(2, ℂ) where
 
   inv_mem' := by                          -- 逆元に関して閉じていること
     intro A HA
-    rw [Set.mem_setOf_eq]
-
+    rw [Set.mem_setOf_eq] at *
 
     exact inv_mem HA
 
