@@ -1,13 +1,11 @@
 import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 import Mathlib.Analysis.CStarAlgebra.Classes
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 import Mathlib.LinearAlgebra.UnitaryGroup
+import Mathlib.RingTheory.RootsOfUnity.Complex
 
 
 open MatrixGroups Matrix Complex
-
-variable (n : ℕ) [NeZero n]
 
 
 -- [位数2の巡回群] --
@@ -56,18 +54,20 @@ instance sl_cyclic : Subgroup SL(2, ℂ) where
       right; rw [aux]
 
 
+variable (n : ℕ) (hn : n ≠ 0)
+
+
 -- [位数nの巡回群] --
 
 noncomputable def ζ : ℂ := exp (2 * (Real.pi : ℂ) * I / n)  -- ζ = e^(2πi/n)
 
 -- 1. 生成元 M : 回転に対応する行列
 noncomputable def M : SL(2, ℂ) :=
-  let M : Matrix (Fin 2) (Fin 2) ℂ := diagonal ![ζ n, (ζ n)⁻¹]  -- !![ζ n, 0; 0, (ζ n)⁻¹]
-  ⟨M, by simp [M, ζ]⟩
+  let N : Matrix (Fin 2) (Fin 2) ℂ := diagonal ![(ζ n), (ζ n)⁻¹]  -- !![ζ n, 0; 0, (ζ n)⁻¹]
+  ⟨N, by simp [N, ζ]⟩
 
 -- A n のべき乗全体の集合（Set）を定義
-def cyclicSet : Set (SL(2, ℂ)) :=
-  {g | ∃ k : ℤ, g = M n ^ k}
+def cyclicSet : Set (SL(2, ℂ)) := {g | ∃ k : ℤ, g = M n ^ k}
 
 -- cyclicSet が SL(2, ℂ)の部分群であること
 instance cyclic_subgroup : Subgroup SL(2, ℂ) where
@@ -89,8 +89,35 @@ instance cyclic_subgroup : Subgroup SL(2, ℂ) where
 noncomputable def cyclicSubgroup : Subgroup SL(2, ℂ) :=
   Subgroup.zpowers (M n)  -- M n を生成元とする巡回群, Subgroup.closure {M n}
 
+lemma pow_ne_one (k : ℕ) (hk : 0 < k ∧ k < n) (hlt : 1 < n) :
+    (exp (2 * Real.pi * I / n)) ^ k ≠ 1 := by
+  have hprim : IsPrimitiveRoot (exp (2 * Real.pi * I / n)) n := by
+    refine (isPrimitiveRoot_iff (exp (2 * Real.pi * I/n)) n ?_).mpr ?_
+    · exact Nat.ne_zero_of_lt hlt
+    · use 1
+      constructor
+      · assumption
+      · refine exists_prop.mpr ?_
+        constructor
+        · exact Nat.gcd_one_left n
+        · congr; simp only [Nat.cast_one, one_div]
+  obtain ⟨h1, h2⟩ := hprim
+  specialize h2 k
+  by_contra
+  specialize h2 this
+  obtain ⟨m,hm⟩ := h2
+  rw [hm] at hk
+  obtain ⟨pos,div⟩ := hk
+  have aux : m ≥ 1 := by
+    refine Nat.one_le_iff_ne_zero.mpr ?_
+    by_contra
+    rw [this] at pos
+    norm_num at pos
+  have aux2 : n * m ≥ n := by exact Nat.le_mul_of_pos_right n aux
+  linarith
+
 -- 3. この部分群が位数 n の巡回群であることを示す
-theorem finite_cyclic_subgroup_exists :
+theorem finite_cyclic_subgroup_exists (hn : n ≠ 0) :
     ∃ (G : Subgroup SL(2, ℂ)), IsCyclic G ∧ Nat.card G = n := by
   -- let G := cyclicSubgroup n
   use cyclicSubgroup n
@@ -104,11 +131,15 @@ theorem finite_cyclic_subgroup_exists :
         simp [diagonal_pow]
         fin_cases i <;> fin_cases j <;> simp [ζ, ← exp_nsmul, ← mul_div_assoc]
         <;> rw [mul_comm, mul_div_assoc, div_self, mul_one, exp_two_pi_mul_I]
-        <;> exact NeZero.out
-      · intro k hk kpos
-        contrapose! hk
+        <;> exact Nat.cast_ne_zero.mpr hn
+      · intro k hk kpos heq
+        rw [M] at heq
+
+        have h : (diagonal ![ζ n, (ζ n)⁻¹]) ^ k = diagonal ![ζ n ^ k, ((ζ n)⁻¹) ^ k] := by
+          simp [diagonal_pow]
+
         sorry
-      · exact Nat.pos_of_neZero n
+      · exact Nat.zero_lt_of_ne_zero hn
 
 
 -- [BinaryDihedralGroup₄ₙ] --
@@ -125,18 +156,27 @@ noncomputable def j : SL(2, ℂ) :=
   let M : Matrix (Fin 2) (Fin 2) ℂ := !![0, 1; -1, 0]
   ⟨M, by simp [det_fin_two, M]⟩
 
-lemma h₁ (k : ℤ) : j * A n ^ k = A n ^ (-k) * j := by
-  rw [A, j, zpow_neg]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
-  · rw [adjugate_fin_two]
-    simp [Matrix.mul_apply, Fin.sum_univ_two]
-    sorry
-  · sorry
-  · sorry
-  · sorry
 
-lemma h₂ : j * j = A n ^ n := by
+lemma h₁ (k : ℤ) : j * A n ^ k = A n ^ (-k) * j := by
+  have h₀ : Finset.univ.erase (0 : Fin 2) = {1} := by decide
+  have h₁ : Finset.univ.erase (1 : Fin 2) = {0} := by decide
+  induction k with
+  | zero =>
+  · simp only [zpow_zero, mul_one, neg_zero, one_mul]
+  | succ a ha =>
+  · rw [zpow_add, zpow_one, ← mul_assoc, ha, neg_add, zpow_add, zpow_neg]
+    simp only [mul_right_inj, zpow_natCast, mul_assoc, Int.reduceNeg, zpow_neg, zpow_one]
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+    simp [j, A] <;> simp [h₀, h₁]
+  | pred a ha =>
+  · rw [zpow_sub, zpow_one, ← mul_assoc, ha, neg_neg, neg_sub, sub_neg_eq_add]
+    simp only [mul_assoc, add_comm, zpow_add, zpow_one, mul_right_inj]
+    ext i j; fin_cases i <;> fin_cases j <;> simp [A, j]
+    <;> simp [h₀, h₁]
+
+
+lemma h₂ (hn : n ≠ 0) : j * j = A n ^ n := by
   have h : j * j = minusI₂ := by
     simp [j, minusI₂]
     ext i j
@@ -145,8 +185,8 @@ lemma h₂ : j * j = A n ^ n := by
   ext i j
   simp only [neg_apply, SpecialLinearGroup.coe_pow]
   rw [diagonal_pow]
-  fin_cases i <;> fin_cases j <;> simp [ω, ← exp_nsmul, ← mul_div_assoc, mul_comm]
-  <;> rw [mul_comm, exp_pi_mul_I]
+  fin_cases i <;> fin_cases j <;> simp [ω, ← exp_nsmul, ← mul_div_assoc]
+  <;> rw [mul_comm, mul_div_assoc, div_self (by simp [hn]), mul_one, exp_pi_mul_I]
   rw [inv_neg, inv_one]
 
 lemma h₃ (k : ℤ) : j⁻¹ * A n ^ (-k) = A n ^ k * j⁻¹ := by
@@ -155,8 +195,8 @@ lemma h₃ (k : ℤ) : j⁻¹ * A n ^ (-k) = A n ^ k * j⁻¹ := by
   simp [← mul_assoc] at h
   rw [h, zpow_neg]
 
-lemma h₄ : j⁻¹ = (A n ^ n)⁻¹ * j := by
-  have h := h₂ n
+lemma h₄ (hn : n ≠ 0) : j⁻¹ = (A n ^ n)⁻¹ * j := by
+  have h := h₂ n hn
   apply_fun (λ x => x * j⁻¹) at h
   rw [mul_assoc, mul_inv_cancel, mul_one] at h
   nth_rw 2 [h]
@@ -189,14 +229,14 @@ def binary_dihedral_subgrup : Subgroup SL(2, ℂ) where
       rw [mul_assoc, h₁, ← mul_assoc, zpow_sub, zpow_neg]
     · use k - l + n; left
       rw [hMB, hNB]
-      simp [mul_assoc, ← mul_assoc j, h₁, h₂ n, zpow_sub, zpow_add]
+      simp [mul_assoc, ← mul_assoc j, h₁, h₂ n hn, zpow_sub, zpow_add]
 
   inv_mem' := by
     rintro M ⟨k, (hMA | hMB)⟩
     · use -k; left
       simp only [hMA, A, zpow_neg]
     · use k - n; right
-      rw [hMB, _root_.mul_inv_rev, ← zpow_neg, h₃, h₄ n, ← mul_assoc, mul_left_inj]
+      rw [hMB, _root_.mul_inv_rev, ← zpow_neg, h₃, h₄ n hn, ← mul_assoc, mul_left_inj]
       rw [zpow_sub, zpow_natCast]
 
 
@@ -286,17 +326,19 @@ def SU (n : ℕ) := specialUnitaryGroup (Fin n) ℂ
 instance SU2 : Subgroup SL(2, ℂ) where
   carrier := {M : SL(2, ℂ) | M.val ∈ SU 2}  -- SU(2) の行列を SL(2, ℂ) の部分集合として定義
 
-  one_mem' := by simp[SU]                 -- 単位元が含まれること
+  one_mem' := by simp only [Set.mem_setOf_eq, SpecialLinearGroup.coe_one, one_mem]                 -- 単位元が含まれること
 
   mul_mem' := by                           -- 乗法に関して閉じていること
     intro A B HA HB
-    simp only [Set.mem_setOf_eq] at *
-    sorry
+    rw [Set.mem_setOf_eq, SpecialLinearGroup.coe_mul]
+    exact MulMemClass.mul_mem HA HB
 
   inv_mem' := by                          -- 逆元に関して閉じていること
     intro A HA
-    simp [SU] at *
-    sorry
+    rw [Set.mem_setOf_eq]
+
+
+    exact inv_mem HA
 
 
 theorem conjugate_finite_subgroup_into_SU2 (G : Subgroup SL(2, ℂ)) [Finite G] :
