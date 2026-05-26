@@ -3,8 +3,7 @@ import Mathlib.Analysis.CStarAlgebra.Classes
 import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 import Mathlib.LinearAlgebra.UnitaryGroup
 import Mathlib.RingTheory.RootsOfUnity.Complex
-
-import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+import Mathlib.Analysis.InnerProductSpace.Defs
 
 
 open MatrixGroups Matrix Complex SpecialLinearGroup UnitaryGroup
@@ -350,14 +349,12 @@ instance : Subgroup SL(2, ℂ) where
       simp only [SetLike.mem_coe] at *
       rw [mem_unitaryGroup_iff] at hA_unitary
       -- apply inv_eq_right_inv at hA_unitary
-
       apply_fun (λ x => A⁻¹.val * x) at hA_unitary
       rw [mul_one, ← mul_assoc, ← coe_mul, inv_mul_cancel, coe_one, one_mul] at hA_unitary
       -- rw [coe_inv'] at hA_unitary
       rw [← hA_unitary, Unitary.star_mem_iff]
       exact this
     · exact A⁻¹.prop
-
 
 -- もう一つの部分群の定義を使う
 def SU2_subgroup : Subgroup SL(2, ℂ) :=
@@ -383,6 +380,52 @@ def SU2_subgroup : Subgroup SL(2, ℂ) :=
         exact mul_mem HA hB_inv)
 
 instance : Subgroup SL(2, ℂ) := SU2_subgroup
+
+
+variable {G : Subgroup SL(2, ℂ)} [Fintype G]
+
+def invariant_inner (u v : Fin 2 → ℂ) : ℂ :=  -- Fin 2 → ℂ ↔ ℂ²
+  (1 / (Fintype.card G : ℂ)) * ∑ g : G, inner (g.val.val *ᵥ u) (g.val.val *ᵥ v)
+
+def invariant_inner_map (u v : Fin 2 → ℂ) : ℂ :=
+  (1 / (Fintype.card G : ℂ)) * ∑ g : G, ⟪(g.val.val *ᵥ u), (g.val.val *ᵥ v)⟫
+
+local notation "⟪" u ", " v "⟫_G" => invariant_inner u v
+
+
+-- 第一引数の加法性の証明
+theorem invariant_inner_add_left (u v w : Fin 2 → ℂ) : ⟪u + w, v⟫_G = ⟪u, v⟫_G + ⟪w, v⟫_G := by
+  dsimp [invariant_inner]
+  sorry
+
+
+-- 第一引数のスカラー倍（斉次性）の証明
+theorem invariant_inner_smul_left (c : ℂ) (u v : Fin 2 → ℂ) : ⟪c • u, v⟫_G = RingHom.conj c * ⟪u, v⟫_G := by
+  dsimp [invariant_inner]
+  sorry
+
+
+-- 共役対称性の証明
+theorem invariant_inner_conj_symm (u v : Fin 2 → ℂ) : ⟪u, v⟫_G = RingHom.conj ⟪v, u⟫_G := by
+  dsimp [invariant_inner]
+  sorry
+
+
+--  正定値性の証明
+theorem invariant_inner_pos (u : Fin 2 → ℂ) : 0 ≤ ⟪u, u⟫_G.re ∧ (⟪u, u⟫_G = 0 ↔ u = 0) := by
+  constructor
+  · sorry
+  · constructor
+    · intro h
+      sorry
+    · intro h
+      subst h
+      sorry
+
+
+
+
+
 
 theorem conjugate_finite_subgroup_into_SU2 (G : Subgroup SL(2, ℂ)) [Finite G] :
     ∃ P : SL(2, ℂ), ∀ g ∈ G, (P * g * P⁻¹ : SL(2, ℂ)).val ∈ SU 2 := by
