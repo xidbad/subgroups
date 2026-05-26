@@ -4,8 +4,10 @@ import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 import Mathlib.LinearAlgebra.UnitaryGroup
 import Mathlib.RingTheory.RootsOfUnity.Complex
 
+import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 
-open MatrixGroups Matrix Complex
+
+open MatrixGroups Matrix Complex SpecialLinearGroup UnitaryGroup
 
 
 -- [位数2の巡回群] --
@@ -105,9 +107,9 @@ lemma pow_ne_one (k : ℕ) (hk : 0 < k ∧ k < n) (hlt : 1 < n) :
   specialize h2 k
   by_contra
   specialize h2 this
-  obtain ⟨m,hm⟩ := h2
+  obtain ⟨m, hm⟩ := h2
   rw [hm] at hk
-  obtain ⟨pos,div⟩ := hk
+  obtain ⟨pos, div⟩ := hk
   have aux : m ≥ 1 := by
     refine Nat.one_le_iff_ne_zero.mpr ?_
     by_contra
@@ -137,7 +139,7 @@ theorem finite_cyclic_subgroup_exists (hn : n ≠ 0) :
           apply_fun (fun M : SL(2, ℂ) => (M : Matrix (Fin 2) (Fin 2) ℂ) 0 0) at heq
           simp [one_apply_eq, diagonal_pow] at heq
           exact heq
-        contrapose! h
+        absurd h
         rw [ζ]
         apply pow_ne_one
         use kpos
@@ -168,19 +170,18 @@ lemma h₁ (k : ℤ) : j * A n ^ k = A n ^ (-k) * j := by
   have h₁ : Finset.univ.erase (1 : Fin 2) = {0} := by decide
   induction k with
   | zero =>
-  · simp only [zpow_zero, mul_one, neg_zero, one_mul]
+  · rw [zpow_zero, mul_one, neg_zero, zpow_zero, one_mul]
   | succ a ha =>
   · rw [zpow_add, zpow_one, ← mul_assoc, ha, neg_add, zpow_add, zpow_neg]
-    simp only [mul_right_inj, zpow_natCast, mul_assoc, Int.reduceNeg, zpow_neg, zpow_one]
+    rw [mul_assoc, mul_assoc, mul_right_inj, zpow_neg, zpow_one]
     ext i j
     fin_cases i <;> fin_cases j <;>
     simp [j, A] <;> simp [h₀, h₁]
   | pred a ha =>
   · rw [zpow_sub, zpow_one, ← mul_assoc, ha, neg_neg, neg_sub, sub_neg_eq_add]
-    simp only [mul_assoc, add_comm, zpow_add, zpow_one, mul_right_inj]
+    rw [add_comm, zpow_add, zpow_one, mul_assoc, mul_assoc, mul_right_inj]
     ext i j; fin_cases i <;> fin_cases j <;> simp [A, j]
     <;> simp [h₀, h₁]
-
 
 lemma h₂ (hn : n ≠ 0) : j * j = A n ^ n := by
   have h : j * j = minusI₂ := by
@@ -279,7 +280,7 @@ instance : Subgroup SL(2, ℂ) where
 -- 八面体群特有の生成元 (1+i)/√2 に相当する行列
 noncomputable def C : SL(2, ℂ) :=
   let M : Matrix (Fin 2) (Fin 2) ℂ := !![(1/(Real.sqrt 2))*(1 + I), 0; 0, (1/(Real.sqrt 2))*(1 - I)]
-  ⟨M, by simp [M]; field_simp; ring_nf; rw [I_sq]; norm_num; rw [← Complex.ofReal_pow]; rw [Real.sq_sqrt (by norm_num)]; norm_num⟩
+  ⟨M, by simp [M]; ring_nf; rw [I_sq]; norm_num; rw [← Complex.ofReal_pow, Real.sq_sqrt (by norm_num)]; norm_num⟩
 
 
 noncomputable def BO48 : Subgroup SL(2, ℂ) :=
@@ -304,7 +305,7 @@ noncomputable def D : SL(2, ℂ) :=
   let phi : ℂ := (1 + Real.sqrt 5) / 2
   let inv2 : ℂ := (1 : ℂ) / 2
   let M : Matrix (Fin 2) (Fin 2) ℂ := inv2 • !![phi + I * (phi - 1), 1; -1, phi - I * (phi - 1)]
-  ⟨M, by simp [M, phi, inv2]; field_simp; norm_num; ring_nf; rw [I_sq]; norm_num; rw [← Complex.ofReal_pow]; rw [Real.sq_sqrt (by norm_num)]; norm_num⟩
+  ⟨M, by simp [M, phi, inv2]; ring_nf; rw [I_sq]; norm_num; rw [← Complex.ofReal_pow, Real.sq_sqrt (by norm_num)]; norm_num⟩
 
 
 /-- BI120 を生成元からなる部分群として定義 -/
@@ -329,22 +330,59 @@ instance : Subgroup SL(2, ℂ) where
 
 def SU (n : ℕ) := specialUnitaryGroup (Fin n) ℂ
 
-instance SU2 : Subgroup SL(2, ℂ) where
+instance : Subgroup SL(2, ℂ) where
   carrier := {M : SL(2, ℂ) | M.val ∈ SU 2}  -- SU(2) の行列を SL(2, ℂ) の部分集合として定義
 
-  one_mem' := by simp only [Set.mem_setOf_eq, SpecialLinearGroup.coe_one, one_mem]                 -- 単位元が含まれること
+  one_mem' := by  -- 単位元が含まれること
+    simp only [Set.mem_setOf_eq, SpecialLinearGroup.coe_one, one_mem]
 
-  mul_mem' := by                           -- 乗法に関して閉じていること
+  mul_mem' := by  -- 乗法に関して閉じていること
     intro A B HA HB
-    rw [Set.mem_setOf_eq, SpecialLinearGroup.coe_mul]
-    exact MulMemClass.mul_mem HA HB
+    rw [SU, Set.mem_setOf_eq] at *
+    -- rw [Set.mem_setOf_eq, SpecialLinearGroup.coe_mul]
+    exact mul_mem HA HB
 
-  inv_mem' := by                          -- 逆元に関して閉じていること
+  inv_mem' := by  -- 逆元に関して閉じていること
     intro A HA
-    rw [Set.mem_setOf_eq] at *
+    constructor
+    · rcases HA with ⟨hA_unitary, hA_det⟩
+      have := hA_unitary
+      simp only [SetLike.mem_coe] at *
+      rw [mem_unitaryGroup_iff] at hA_unitary
+      -- apply inv_eq_right_inv at hA_unitary
 
-    exact inv_mem HA
+      apply_fun (λ x => A⁻¹.val * x) at hA_unitary
+      rw [mul_one, ← mul_assoc, ← coe_mul, inv_mul_cancel, coe_one, one_mul] at hA_unitary
+      -- rw [coe_inv'] at hA_unitary
+      rw [← hA_unitary, Unitary.star_mem_iff]
+      exact this
+    · exact A⁻¹.prop
 
+
+-- もう一つの部分群の定義を使う
+def SU2_subgroup : Subgroup SL(2, ℂ) :=
+  Subgroup.ofDiv {M : SL(2, ℂ) | M.val ∈ SU 2}
+
+    -- 2. 空ではない（1 を含む）の証明
+    (by have := one_mem (SU 2); exact ⟨1, this⟩)
+
+    -- 3. A ∈ SU 2, B ∈ SU 2 ⇒ A * B⁻¹ ∈ SU 2 の証明
+    (by intro A HA B HB
+        rw [Set.mem_setOf_eq] at *
+        have hB_inv : B⁻¹.val ∈ SU 2 := by
+          constructor
+          · rcases HB with ⟨hB_unitary, hB_det⟩
+            have := hB_unitary
+            simp only [SetLike.mem_coe] at *
+            rw [mem_unitaryGroup_iff] at hB_unitary
+            apply_fun (λ x => B⁻¹.val * x) at hB_unitary
+            rw [mul_one, ← mul_assoc, ← coe_mul, inv_mul_cancel, coe_one, one_mul] at hB_unitary
+            rw [← hB_unitary, Unitary.star_mem_iff]
+            exact this
+          · exact B⁻¹.prop
+        exact mul_mem HA hB_inv)
+
+instance : Subgroup SL(2, ℂ) := SU2_subgroup
 
 theorem conjugate_finite_subgroup_into_SU2 (G : Subgroup SL(2, ℂ)) [Finite G] :
     ∃ P : SL(2, ℂ), ∀ g ∈ G, (P * g * P⁻¹ : SL(2, ℂ)).val ∈ SU 2 := by
