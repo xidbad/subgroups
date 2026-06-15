@@ -474,7 +474,7 @@ lemma gramMatrix_conjTranspose_mul (G : Subgroup SL(2, ℂ)) [Fintype G] (g : SL
   rw [h_inner]
   refine' congr_arg _ _
   apply Finset.sum_bij (fun h _ => ⟨h.val * g, by exact G.mul_mem h.2 hg⟩)
-  all_goals generalize_proofs at *
+  -- all_goals generalize_proofs at *
   · aesop
   · aesop
   · exact fun b _ => ⟨⟨b.val * g⁻¹, by simpa using G.mul_mem b.2 (G.inv_mem hg)⟩,
@@ -586,4 +586,5 @@ theorem conjugate_finite_subgroup_into_SU2 (G : Subgroup SL(2, ℂ)) [Finite G] 
 
 end
 
+-- blueprint, averagedinner の証明
 #min_imports
