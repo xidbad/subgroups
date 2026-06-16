@@ -26,7 +26,7 @@ lemma aux : minusI₂⁻¹ = minusI₂ := by
     aesop
   apply inv_eq_iff_mul_eq_one.mpr h
 
-instance sl_cyclic : Subgroup SL(2, ℂ) where
+def sl_cyclic : Subgroup SL(2, ℂ) where
   carrier := {I₂, minusI₂}                    -- {I₂, -I₂} が SL(2, ℂ) の部分群であること
 
   one_mem' := by left; rfl                    -- 単位元が含まれること
@@ -72,7 +72,7 @@ def M : SL(2, ℂ) :=
 def cyclicSet : Set (SL(2, ℂ)) := {g | ∃ k : ℤ, g = M n ^ k}
 
 -- cyclicSet が SL(2, ℂ)の部分群であること
-instance cyclic_subgroup : Subgroup SL(2, ℂ) where
+def cyclic_subgroup : Subgroup SL(2, ℂ) where
   carrier := cyclicSet n
 
   one_mem' := ⟨0, by simp only [zpow_zero]⟩  -- k = 0
@@ -190,7 +190,7 @@ lemma h₂ (hn : n ≠ 0) : j * j = A n ^ n := by
     fin_cases i <;> fin_cases j <;> simp
   rw [h, A, minusI₂]
   ext i j
-  simp only [neg_apply, SpecialLinearGroup.coe_pow]
+  simp only [SpecialLinearGroup.coe_pow]
   rw [diagonal_pow]
   fin_cases i <;> fin_cases j <;> simp [ω, ← exp_nsmul, ← mul_div_assoc]
   <;> rw [mul_comm, mul_div_assoc, div_self (by simp [hn]), mul_one, exp_pi_mul_I]
@@ -259,7 +259,7 @@ def B : SL(2, ℂ) :=
 def BT24 : Subgroup SL(2, ℂ) :=
   Subgroup.closure {i, j, B}
 
-instance : Subgroup SL(2, ℂ) where
+def BT24_subgroup : Subgroup SL(2, ℂ) where
   carrier := {M | M ∈ BT24}
 
   one_mem' := BT24.one_mem
@@ -284,7 +284,7 @@ def C : SL(2, ℂ) :=
 def BO48 : Subgroup SL(2, ℂ) :=
   Subgroup.closure {i, j, B, C}
 
-instance : Subgroup SL(2, ℂ) where
+def BO48_subgroup : Subgroup SL(2, ℂ) where
   carrier := {M | M ∈ BO48}
 
   one_mem' := BO48.one_mem
@@ -310,7 +310,7 @@ def D : SL(2, ℂ) :=
 def BI120 : Subgroup SL(2, ℂ) :=
   Subgroup.closure {i, j, B, D}
 
-instance : Subgroup SL(2, ℂ) where
+def BI120_subgroup : Subgroup SL(2, ℂ) where
   carrier := {M | M ∈ BI120}
 
   one_mem' := BI120.one_mem
@@ -328,7 +328,7 @@ instance : Subgroup SL(2, ℂ) where
 
 def SU (n : ℕ) := specialUnitaryGroup (Fin n) ℂ
 
-instance : Subgroup SL(2, ℂ) where
+def SU2_subgroup : Subgroup SL(2, ℂ) where
   carrier := {M : SL(2, ℂ) | M.val ∈ SU 2}  -- SU(2) の行列を SL(2, ℂ) の部分集合として定義
 
   one_mem' := by  -- 単位元が含まれること
@@ -356,7 +356,7 @@ instance : Subgroup SL(2, ℂ) where
     · exact A⁻¹.prop
 
 -- -- もう一つの部分群の定義を使う
-def SU2_subgroup : Subgroup SL(2, ℂ) := by
+def SU2_subgroup' : Subgroup SL(2, ℂ) := by
   refine Subgroup.ofDiv {M : SL(2, ℂ) | M.val ∈ SU 2} ?_ ?_
 
     -- 2. 空ではない（1 を含む）の証明
@@ -377,8 +377,6 @@ def SU2_subgroup : Subgroup SL(2, ℂ) := by
         exact this
       · exact B⁻¹.prop
     exact mul_mem HA hB_inv
-
-instance : Subgroup SL(2, ℂ) := SU2_subgroup
 
 -- n*n の場合
 variable {G : Type*} [Group G] [Fintype G]
