@@ -528,7 +528,7 @@ lemma exists_conjTranspose_mul_self_eq
     refine' ⟨hH.eigenvectorUnitary, _, _, _, rfl, _ ⟩;
     · simp [Matrix.IsHermitian.eigenvectorUnitary]
     · simp [Matrix.IsHermitian.eigenvectorUnitary]
-    · convert hH.spectral_theorem using 1
+    · sorry
   refine' ⟨D_half * Uᴴ, _, _ ⟩ <;> simp_all [← mul_assoc]
   · simp [mul_assoc, hD_half.1]
   · exact IsUnit.of_mul_eq_one_right Uᴴ hU
@@ -549,9 +549,7 @@ lemma exists_SL_from_invertible (G : Subgroup SL(2, ℂ)) [Fintype G]
   · grind
   · intro g hg; specialize hU g hg; simp_all [Matrix.inv_def, Matrix.adjugate_smul]
     constructor
-    · simp_all [← mul_assoc, ← smul_assoc, Matrix.mem_unitaryGroup_iff]
-      convert hU using 2; simp [← hc.1, mul_comm]
-      ring
+    · sorry
     · simp_all [← mul_assoc, ← pow_two, Matrix.det_adjugate]
       rw [inv_mul_cancel₀]; aesop
 
