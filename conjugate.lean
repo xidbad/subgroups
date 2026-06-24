@@ -51,7 +51,6 @@ lemma averagedInner_self_nonneg (u : V) : 0 ≤ (⟪u, u⟫_G).re := by
   · apply Finset.sum_nonneg
     intro g gmem; norm_cast
     exact sq_nonneg _
-  -- exact mul_nonneg (inv_nonneg.2 (Nat.cast_nonneg _)) (Finset.sum_nonneg fun _ _ => by norm_cast; positivity)
 
 -- 正定値性
 lemma averagedInner_self_eq_zero {u : V} (h : ⟪u, u⟫_G = 0) : u = 0 := by

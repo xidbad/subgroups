@@ -1,35 +1,104 @@
 import Mathlib.Algebra.Ring.IsFormallyReal
 import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 import Mathlib.Analysis.CStarAlgebra.Module.Constructions
+import Mathlib.Analysis.Matrix.Spectrum
 import Mathlib.RepresentationTheory.Basic
 
-open MatrixGroups Matrix
-
-noncomputable section
+open MatrixGroups Matrix Complex SpecialLinearGroup
 
 set_option quotPrecheck false
+
+noncomputable section
 
 
 variable (G : Subgroup SL(2, ℂ)) [Fintype G]
 
 
-notation "⟪"x", "y"⟫" => star x ⬝ᵥ y  -- 標準内積
-
+notation "⟪"u", "v"⟫" => star u ⬝ᵥ v  -- 標準内積
 
 def SU (n : ℕ) := specialUnitaryGroup (Fin n) ℂ
-
 
 /-- 部分群 `G ≤ SL(2, ℂ)` の `ℂ² = (Fin 2 → ℂ)` 上への標準表現：
 `ρ g u = g *ᵥ u`（`g` を行列とみなした行列・ベクトル積）。 -/
 def ρ {G : Subgroup SL(2, ℂ)} (g : G) (u : Fin 2 → ℂ) : Fin 2 → ℂ :=
   (g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ u
 
+
 /-- `G`-平均エルミート内積
 `⟪u, v⟫_G = (1/|G|) ∑_{g ∈ G} ⟪ρ g u, ρ g v⟫`。 -/
-def avgInner (u v : Fin 2 → ℂ) : ℂ :=
-  (Fintype.card G : ℂ)⁻¹ * ∑ g : G, ⟪ρ g u, ρ g v⟫
+def avgInner (u v : Fin 2 → ℂ) : ℂ := (Fintype.card G : ℂ)⁻¹ * ∑ g : G, ⟪ρ g u, ρ g v⟫
 
-notation "⟪"x", "y"⟫_G" => avgInner G x y
+notation "⟪"u", "v"⟫_G" => avgInner G u v
+
+
+-- 第一引数の加法性
+lemma avgInner_add_left (u v w : Fin 2 → ℂ) : ⟪u + v, w⟫_G = ⟪u, w⟫_G + ⟪v, w⟫_G := by
+  simp [avgInner, ρ, Matrix.mulVec_add, Finset.sum_add_distrib]; ring
+
+-- 第一引数のスカラー同次性
+lemma avgInner_smul_left (c : ℂ) (u v : Fin 2 → ℂ) :
+    ⟪c • u, v⟫_G = (starRingEnd ℂ) c * ⟪u, v⟫_G := by
+  simp [avgInner, ρ, Matrix.mulVec_smul, Finset.mul_sum _ _ _, mul_left_comm]
+
+-- 共役対称性
+lemma avgInner_conj_symm (u v : Fin 2 → ℂ) : ⟪u, v⟫_G = (starRingEnd ℂ) (⟪v, u⟫_G) := by
+  simp [avgInner, mul_comm]
+
+-- 非負性
+lemma avgInner_self_nonneg (u : Fin 2 → ℂ) : 0 ≤ (⟪u, u⟫_G).re := by
+  simp_all [avgInner, ρ]
+  apply mul_nonneg
+  · exact inv_nonneg.2 (Nat.cast_nonneg _)
+  · apply Finset.sum_nonneg
+    intro g gmem
+    apply add_nonneg
+    · apply add_nonneg
+      · apply mul_self_nonneg
+      · apply mul_self_nonneg
+    · apply add_nonneg
+      · apply mul_self_nonneg
+      · apply mul_self_nonneg
+
+
+-- 正定値性
+lemma avgInner_self_eq_zero {u : Fin 2 → ℂ} (h : ⟪u, u⟫_G = 0) : u = 0 := by
+  contrapose! h with h_nonzero
+  unfold avgInner
+  obtain ⟨g, hg⟩ : ∃ g : G, ρ g u ≠ 0 := by exact ⟨1, by simpa [ρ] using h_nonzero⟩
+  refine' ne_of_apply_ne Complex.re _; norm_num [Complex.ext_iff] at *
+  -- apply lt_of_lt_of_le
+  -- · exact lt_of_le_of_ne (by exact inv_nonneg.2 (Nat.cast_nonneg _)) (by norm_num)
+  -- · apply Finset.single_le_sum (fun x _ => by nlinarith) (by exact Finset.mem_univ g)
+
+  exact ne_of_gt <| lt_of_lt_of_le (by exact lt_of_le_of_ne (by nlinarith ) <| Ne.symm <| by intro H; exact hg <| by ext i; fin_cases i <;> norm_num [ Complex.ext_iff ] <;> constructor <;> nlinarith ) <| Finset.single_le_sum ( fun x _ => by nlinarith ) <| Finset.mem_univ g
+
+
+-- G-不変性(ユニタリ性)
+theorem avgInner_invariant (g : G) (u v : Fin 2 → ℂ) : ⟪ρ g u, ρ g v⟫_G = ⟪u, v⟫_G := by
+  simp only [avgInner, ρ]
+  conv_rhs => rw [← Equiv.sum_comp (Equiv.mulRight g)]
+  simp [Matrix.mulVec_mulVec, dotProduct_comm]
+
+
+@[reducible]
+def avgInnerCore : InnerProductSpace.Core ℂ (Fin 2 → ℂ) where
+  inner := avgInner G
+  conj_inner_symm := by
+    intro x y
+    exact Eq.symm (avgInner_conj_symm G x y)
+  re_inner_nonneg := by
+    intro x
+    exact avgInner_self_nonneg G x
+  add_left := by
+    intro x y z
+    exact avgInner_add_left G x y z
+  smul_left := by
+    intro x y r
+    exact avgInner_smul_left G r x y
+  definite := by
+    intro x h
+    exact avgInner_self_eq_zero G h
+
 
 /- ⟪,⟫_G における正規直交基底 v₁, v₂ としたとき, Uv₁ = e₁, Uv₂ = e₂ となるように `U` を取る。
 　　平均内積から標準内積へ変換する基底変換行列 -/
@@ -67,5 +136,5 @@ theorem conj_mem_SU (g : G) (U : Matrix (Fin 2) (Fin 2) ℂ) (hUinv : IsUnit U.d
 
 end
 
--- SU 2 の有限部分群とは？
+
 #min_imports
