@@ -1,12 +1,21 @@
-import Mathlib.Algebra.Ring.IsFormallyReal
+import Mathlib.Algebra.Order.Star.Real
+import Mathlib.Algebra.Quaternion
 import Mathlib.AlgebraicTopology.SimplexCategory.Basic
-import Mathlib.Analysis.CStarAlgebra.Module.Constructions
-import Mathlib.Analysis.Matrix.Spectrum
-import Mathlib.RepresentationTheory.Basic
+import Mathlib.Analysis.CStarAlgebra.Classes
+import Mathlib.Analysis.InnerProductSpace.Defs
+import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
+import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+import Mathlib.LinearAlgebra.UnitaryGroup
 
-open MatrixGroups Matrix Complex SpecialLinearGroup
+
+import Mathlib.Analysis.InnerProductSpace.PiL2
+-- import Mathlib.RingTheory.SimpleRing.Principal
+-- import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
+
+open MatrixGroups Matrix Complex SpecialLinearGroup Quaternion
 
 set_option quotPrecheck false
+
 
 noncomputable section
 
@@ -132,6 +141,152 @@ theorem conj_mem_SU (g : G) (U : Matrix (Fin 2) (Fin 2) ℂ) (hUinv : IsUnit U.d
         Ring.mul_inverse_cancel _ hUinv]
   exact Matrix.mem_specialUnitaryGroup_iff.mpr
     ⟨Matrix.mem_unitaryGroup_iff'.mpr h_unitary, hdet2⟩
+
+
+/-  `Quaternion` -/
+
+namespace Quaternion
+
+/-- `ℍ[ℝ] : Type := Quaternion ℝ, a + b i + c j + d k (a, b, c, d ∈ ℝ)`
+    `⟨a, b, c, d⟩` --/
+
+-- i, j, k の定義
+def qi : ℍ[ℝ] := ⟨0, 1, 0, 0⟩
+
+def qj : ℍ[ℝ] := ⟨0, 0, 1, 0⟩
+
+def qk : ℍ[ℝ]  := ⟨0, 0, 0, 1⟩
+
+/-- 任意の四元数は実数係数の基底の線形結合として表される。 -/
+theorem H_eq (a b c d : ℝ) :
+    (⟨a, b, c, d⟩ : ℍ[ℝ]) = a • (1 : ℍ[ℝ]) + b • qi + c • qj + d • qk := by
+  ext <;> simp [qi, qj, qk]
+
+/-- 実数体上の4次元ベクトル空間である。 -/
+theorem finrank_H : Module.finrank ℝ ℍ[ℝ] = 4 := by
+  rw [finrank_eq_four]
+
+/-`The multiplication law` -/
+
+/-- `i² = -1`. -/
+lemma qi_mul_qi : qi * qi = -1 := by rw [qi]; ext <;> simp
+
+/-- `j² = -1`. -/
+lemma qj_mul_qj : qj * qj = -1 := by rw [qj]; ext <;> simp
+
+/-- `k² = -1`. -/
+lemma qk_mul_qk : qk * qk = -1 := by rw [qk]; ext <;> simp
+
+/-- `ij = k`. -/
+lemma qi_mul_qj : qi * qj = qk := by rw [qi, qj, qk]; ext <;> simp
+
+/-- `jk = i`. -/
+lemma qj_mul_qk : qj * qk = qi := by rw [qi, qj, qk]; ext <;> simp
+
+/-- `ki = j`. -/
+lemma qk_mul_qi : qk * qi = qj := by rw [qi, qj, qk]; ext <;> simp
+
+/-- `ji = -k`. -/
+lemma qj_mul_qi : qj * qi = -qk := by rw [qi, qj, qk]; ext <;> simp
+
+/-- `kj = -i`. -/
+lemma qk_mul_qj : qk * qj = -qi := by rw [qi, qj, qk]; ext <;> simp
+
+/-- `ik = -j`. -/
+lemma qi_mul_qk : qi * qk = -qj := by rw [qi, qj, qk]; ext <;> simp
+
+/-- 以上の6つの関係式は `ijk = -1` で表される. -/
+theorem qi_mul_qj_mul_qk : qi * qj * qk = -1 := by rw [qi, qj, qk]; ext <;> simp
+
+/- 加法 -/
+def qadd (x y : ℍ[ℝ]) : ℍ[ℝ] :=
+  ⟨x.re + y.re, x.imI + y.imI, x.imJ + y.imJ, x.imK + y.imK⟩
+
+-- instance : Add ℍ[ℝ] where
+--   add := fun x y => ⟨x.re + y.re, x.imI + y.imI, x.imJ + y.imJ, x.imK + y.imK⟩
+
+/- スカラー倍 -/
+def qsmul (r : ℝ) (x : ℍ[ℝ]) : ℍ[ℝ] :=
+  ⟨r * x.re, r * x.imI, r * x.imJ, r * x.imK⟩
+
+-- instance : SMul ℝ ℍ[ℝ] where
+--   smul := fun r x => ⟨r * x.re, r * x.imI, r * x.imJ, r * x.imK⟩
+
+/- 乗法 -/
+def qmul (x y : ℍ[ℝ]) : ℍ[ℝ] :=
+  ⟨x.re * y.re - x.imI * y.imI - x.imJ * y.imJ - x.imK * y.imK,
+   x.re * y.imI + x.imI * y.re + x.imJ * y.imK - x.imK * y.imJ,
+   x.re * y.imJ - x.imI * y.imK + x.imJ * y.re + x.imK * y.imI,
+   x.re * y.imK + x.imI * y.imJ - x.imJ * y.imI + x.imK * y.re⟩
+
+-- instance : Mul ℍ[ℝ] where
+--   mul := fun x y =>
+--     ⟨x.re * y.re - x.imI * y.imI - x.imJ * y.imJ - x.imK * y.imK,
+--      x.re * y.imI + x.imI * y.re + x.imJ * y.imK - x.imK * y.imJ,
+--      x.re * y.imJ - x.imI * y.imK + x.imJ * y.re + x.imK * y.imI,
+--      x.re * y.imK + x.imI * y.imJ - x.imJ * y.imI + x.imK * y.re⟩
+
+/- 共役 -/
+lemma conj_components (q : ℍ[ℝ]) :
+    (star q).re = q.re ∧ (star q).imI = -q.imI ∧
+      (star q).imJ = -q.imJ ∧ (star q).imK = -q.imK := by
+  refine ⟨?_, ?_, ?_, ?_⟩ <;> simp only [re_star, imI_star, imJ_star, imK_star]
+
+
+def norm (q : ℍ[ℝ]) : ℝ := Real.sqrt (q.re ^ 2 + q.imI ^ 2 + q.imJ ^ 2 + q.imK ^ 2)
+
+notation "‖"q"‖" => norm q
+
+lemma norm_eq (q : ℍ[ℝ]) : ‖q‖ = Real.sqrt (q * star q).re := by
+  rw [norm]
+  congr 1
+  simp; ring
+
+/- q⁻¹ = star q / ‖q‖² -/
+lemma inv_eq (q : ℍ[ℝ]) : q⁻¹ = (normSq q)⁻¹ • star q :=
+  Quaternion.inv_def q
+
+
+lemma star_mul_comm (q p : ℍ[ℝ]) : star (q * p) = star p * star q :=
+  star_mul q p
+
+
+/-- `ℍ[ℝ] = ℝ ⊕ ℝ³` -/
+theorem real_add_imaginary (q : ℍ[ℝ]) :
+    (↑q.re : ℍ[ℝ]) + (q - ↑q.re) = q ∧ (q - (↑q.re : ℍ[ℝ])).re = 0 := by
+  refine ⟨by abel, by simp⟩
+
+end Quaternion
+
+-- 3次元球面 : {(x₁, x₂, x₃, x₄) ∈ ℝ⁴ | x₁² + x₂² + x₃² + x₄⁴ = 1}
+-- abbrev S3 := {x : Fin 4 → ℝ // x 0 ^ 2 + x 1 ^ 2 + x 2 ^ 2 + x 3 ^ 2 = 1}
+
+abbrev S3 : Set (EuclideanSpace ℝ (Fin 4)) := Metric.sphere 0 1
+
+-- 単位四元数 : {q ∈ ℍ[ℝ] | q * star q = 1}
+abbrev U : Submonoid ℍ[ℝ] := unitary ℍ[ℝ]
+
+
+/- SU 2 = {!![a, b; -star b, star a] | a, b ∈ ℂ, |a|² + |b|² = 1}
+    a = u₁ + iv₁, b = u₂ + iv₂ → u₁² + v₁² + u₂² + v₂² = 1 -/
+def SU2_equiv_S3 : SU 2 ≃ S3 where
+  toFun := by sorry
+  invFun := by sorry
+  left_inv := by sorry
+  right_inv := by sorry
+
+/- (u₁ + iv₁) + (u₂ + iv₂)j = u₁ + iv₁ + ju₂ + kv₂ (∵ ij = k)
+    u₁² + v₁² + u₂² + v₂² = 1 -/
+def SU2_equiv_U : SU 2 ≃ U where
+  toFun q := by sorry
+  invFun M := by sorry
+  left_inv q := by sorry
+  right_inv M := by sorry
+
+
+
+def equivUS3 : U ≃ S3 where
+
 
 
 end
