@@ -1,12 +1,8 @@
-import Mathlib.Algebra.Order.Star.Real
 import Mathlib.Algebra.Quaternion
-import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 import Mathlib.Analysis.CStarAlgebra.Classes
 import Mathlib.Analysis.InnerProductSpace.Defs
-import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 import Mathlib.LinearAlgebra.UnitaryGroup
-import Mathlib.Analysis.InnerProductSpace.PiL2
 
 open MatrixGroups Matrix Complex SpecialLinearGroup Quaternion
 
@@ -274,7 +270,12 @@ def SU2_to_S₃ (M : SU 2) : S₃ :=
     | 1 => (M.val 0 0).im
     | 2 => (M.val 0 1).re
     | 3 => (M.val 0 1).im,
-    by ⟩
+    by
+      have hM := M.prop
+      rcases hM with ⟨h_unitary, h_det⟩
+
+
+      ⟩
 
 -- /- S³ ↦ SU 2 -/
 -- def S₃_to_SU2 (x : Fin 4 → ℝ) : Matrix (Fin 2) (Fin 2) ℂ :=
@@ -325,7 +326,7 @@ def U_to_SU2 (q : U) : SU 2 :=
 def SU2_equiv_S₃ : SU 2 ≃ S₃ where
   toFun M := SU2_to_S₃ M
   invFun x := S₃_to_SU2 x
-  left_inv := by intro M; sorry
+  left_inv := by intro M; ext i j; fin_cases i <;> fin_cases j <;> simp <;> sorry
   right_inv := by intro x; sorry
 
 
