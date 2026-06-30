@@ -6,11 +6,7 @@ import Mathlib.Analysis.InnerProductSpace.Defs
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 import Mathlib.LinearAlgebra.UnitaryGroup
-
-
 import Mathlib.Analysis.InnerProductSpace.PiL2
--- import Mathlib.RingTheory.SimpleRing.Principal
--- import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
 
 open MatrixGroups Matrix Complex SpecialLinearGroup Quaternion
 
@@ -258,35 +254,89 @@ theorem real_add_imaginary (q : ℍ[ℝ]) :
 
 end Quaternion
 
--- 3次元球面 : {(x₁, x₂, x₃, x₄) ∈ ℝ⁴ | x₁² + x₂² + x₃² + x₄⁴ = 1}
--- abbrev S3 := {x : Fin 4 → ℝ // x 0 ^ 2 + x 1 ^ 2 + x 2 ^ 2 + x 3 ^ 2 = 1}
-
-abbrev S3 : Set (EuclideanSpace ℝ (Fin 4)) := Metric.sphere 0 1
+-- 3次元球面 : {(x₁, x₂, x₃, x₄) ∈ ℝ⁴ | x₁² + x₂² + x₃² + x₄² = 1}
+def S₃ := {x : Fin 4 → ℝ | (x 0) ^ 2 + (x 1) ^ 2 + (x 2) ^ 2 + (x 3) ^ 2 = 1}
 
 -- 単位四元数 : {q ∈ ℍ[ℝ] | q * star q = 1}
-abbrev U : Submonoid ℍ[ℝ] := unitary ℍ[ℝ]
+def U : Submonoid ℍ[ℝ] := unitary ℍ[ℝ]
+
+-- /- SU 2 ↦ S³ -/
+-- def SU2_to_S₃ (M : Matrix (Fin 2) (Fin 2) ℂ) : Fin 4 → ℝ
+--   | 0 => (M 0 0).re  -- u₁
+--   | 1 => (M 0 0).im  -- v₁
+--   | 2 => (M 0 1).re  -- u₂
+--   | 3 => (M 0 1).im  -- v₂
+
+/- SU 2 ↦ S³ -/
+def SU2_to_S₃ (M : SU 2) : S₃ :=
+  ⟨fun i => match i with
+    | 0 => (M.val 0 0).re
+    | 1 => (M.val 0 0).im
+    | 2 => (M.val 0 1).re
+    | 3 => (M.val 0 1).im,
+    by ⟩
+
+-- /- S³ ↦ SU 2 -/
+-- def S₃_to_SU2 (x : Fin 4 → ℝ) : Matrix (Fin 2) (Fin 2) ℂ :=
+--   !![⟨x 0, x 1⟩, ⟨x 3, x 4⟩; ⟨-x 3, x 4⟩, ⟨x 0, -x 1⟩]
+
+  /- S³ ↦ SU 2 -/
+def S₃_to_SU2 (x : S₃) : SU 2 :=
+  ⟨!![⟨x.val 0, x.val 1⟩, ⟨x.val 3, x.val 4⟩; ⟨-x.val 3, x.val 4⟩, ⟨x.val 0, -x.val 1⟩], by sorry⟩
+
+-- /- SU 2 ↦ U -/
+-- def SU2_to_U (M : Matrix (Fin 2) (Fin 2) ℂ) : ℍ[ℝ] :=
+--   ⟨(M 0 0).re, (M 0 0).im, (M 0 1).re, (M 0 1).im⟩
+
+/- SU 2 ↦ U -/
+def SU2_to_U (M : SU 2) : U :=
+  ⟨⟨(M.val 0 0).re, (M.val 0 0).im, (M.val 0 1).re, (M.val 0 1).im⟩, by sorry⟩
+
+-- /- U ↦ SU 2 -/
+-- def U_to_SU2 (q : ℍ[ℝ]) : Matrix (Fin 2) (Fin 2) ℂ :=
+--   !![⟨q.re, q.imI⟩, ⟨q.imJ, q.imK⟩; ⟨-q.imJ, q.imK⟩, ⟨q.re, -q.imI⟩]
+
+/- U ↦ SU 2 -/
+def U_to_SU2 (q : U) : SU 2 :=
+  ⟨!![⟨q.val.re, q.val.imI⟩, ⟨q.val.imJ, q.val.imK⟩; ⟨-q.val.imJ, q.val.imK⟩, ⟨q.val.re, -q.val.imI⟩], by sorry⟩
+
+
+-- lemma SU2_norm (M : SU 2) : (M.val 0 0).re ^ 2 + (M.val 0 0).im ^ 2 +
+--     (M.val 0 1).re ^ 2 + (M.val 0 1).im ^ 2 = 1 := by
+--   sorry
+
+-- lemma SU2_mem_S₃ (M : SU 2) : SU2_to_S₃ M ∈ S₃ := by
+--   sorry
+
+-- lemma S₃_mem_SU2 (x : S₃): S₃_to_SU2 x ∈ SU 2 := by
+--   sorry
+
+
+-- lemma SU2_mem_U (M : SU 2) : SU2_to_U M ∈ U := by
+--   sorry
+
+
+-- lemma U_mem_SU2 (q : U) : U_to_SU2 q ∈ SU 2 := by
+--   sorry
 
 
 /- SU 2 = {!![a, b; -star b, star a] | a, b ∈ ℂ, |a|² + |b|² = 1}
     a = u₁ + iv₁, b = u₂ + iv₂ → u₁² + v₁² + u₂² + v₂² = 1 -/
-def SU2_equiv_S3 : SU 2 ≃ S3 where
-  toFun := by sorry
-  invFun := by sorry
-  left_inv := by sorry
-  right_inv := by sorry
+def SU2_equiv_S₃ : SU 2 ≃ S₃ where
+  toFun M := SU2_to_S₃ M
+  invFun x := S₃_to_SU2 x
+  left_inv := by intro M; sorry
+  right_inv := by intro x; sorry
+
 
 /- (u₁ + iv₁) + (u₂ + iv₂)j = u₁ + iv₁ + ju₂ + kv₂ (∵ ij = k)
     u₁² + v₁² + u₂² + v₂² = 1 -/
-def SU2_equiv_U : SU 2 ≃ U where
-  toFun q := by sorry
-  invFun M := by sorry
-  left_inv q := by sorry
-  right_inv M := by sorry
-
-
-
-def equivUS3 : U ≃ S3 where
-
+def SU2_equiv_U : SU 2 ≃* U where  -- 乗法の保存
+  toFun M := SU2_to_U M
+  invFun q := U_to_SU2 q
+  left_inv := by intro M; sorry
+  right_inv := by intro q; sorry
+  map_mul' := by intro M N; sorry
 
 
 end
