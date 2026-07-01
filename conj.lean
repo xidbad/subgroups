@@ -258,83 +258,94 @@ def SU2_to_S₃ (M : Matrix (Fin 2) (Fin 2) ℂ) : Fin 4 → ℝ
   | 2 => (M 0 1).re  -- u₂
   | 3 => (M 0 1).im  -- v₂
 
--- /- SU 2 ↦ S³ -/
--- def SU2_to_S₃ (M : SU 2) : S₃ :=
---   ⟨fun i => match i with
---     | 0 => (M.val 0 0).re
---     | 1 => (M.val 0 0).im
---     | 2 => (M.val 0 1).re
---     | 3 => (M.val 0 1).im,
---     SU2_norm M
--- ⟩
-
 lemma SU2_norm (M : SU 2) : (M.val 0 0).re ^ 2 + (M.val 0 0).im ^ 2 +
     (M.val 0 1).re ^ 2 + (M.val 0 1).im ^ 2 = 1 := by
-  sorry
+  have := M.2
+  obtain ⟨h₁, h₂⟩ := this
+  have := h₁
+  replace := congr_fun (congr_fun this.2 0) 0
+  simp_all [Matrix.mul_apply, Complex.ext_iff]
+  linarith
+
+/- SU 2 ↦ S³ -/
+def SU2_to_S₃' (M : SU 2) : S₃ := ⟨SU2_to_S₃ M, SU2_norm M⟩
 
 
 /- S³ ↦ SU 2 -/
 def S₃_to_SU2 (x : Fin 4 → ℝ) : Matrix (Fin 2) (Fin 2) ℂ :=
   !![⟨x 0, x 1⟩, ⟨x 3, x 4⟩; ⟨-x 3, x 4⟩, ⟨x 0, -x 1⟩]
 
---   /- S³ ↦ SU 2 -/
--- def S₃_to_SU2 (x : S₃) : SU 2 :=
---   ⟨!![⟨x.val 0, x.val 1⟩, ⟨x.val 3, x.val 4⟩; ⟨-x.val 3, x.val 4⟩, ⟨x.val 0, -x.val 1⟩],
---   by sorry
---   ⟩
-
 lemma S₃_mem_SU2 (x : S₃): S₃_to_SU2 x ∈ SU 2 := by
+  constructor
+  · sorry
+  · sorry
+
+  /- S³ ↦ SU 2 -/
+def S₃_to_SU2' (x : S₃) : SU 2 := ⟨S₃_to_SU2 x, S₃_mem_SU2 x⟩
+
+
+lemma SU2_left_inv_S₃ (M : SU 2) : S₃_to_SU2' (SU2_to_S₃' M) = M := by
   sorry
 
+
+lemma SU2_right_inv_S₃ (x : S₃) : SU2_to_S₃' (S₃_to_SU2' x) = x := by
+  sorry
 
 
 /- SU 2 ↦ U -/
 def SU2_to_U (M : Matrix (Fin 2) (Fin 2) ℂ) : ℍ[ℝ] :=
   ⟨(M 0 0).re, (M 0 0).im, (M 0 1).re, (M 0 1).im⟩
 
--- /- SU 2 ↦ U -/
--- def SU2_to_U (M : SU 2) : U :=
---   ⟨⟨(M.val 0 0).re, (M.val 0 0).im, (M.val 0 1).re, (M.val 0 1).im⟩,
---   by
---     sorry
---     ⟩
-
 lemma SU2_mem_U (M : SU 2) : SU2_to_U M ∈ U := by
-  sorry
+  constructor
+  · sorry
+  · sorry
+
+/- SU 2 ↦ U -/
+def SU2_to_U' (M : SU 2) : U := ⟨SU2_to_U M, SU2_mem_U M⟩
 
 
 /- U ↦ SU 2 -/
 def U_to_SU2 (q : ℍ[ℝ]) : Matrix (Fin 2) (Fin 2) ℂ :=
   !![⟨q.re, q.imI⟩, ⟨q.imJ, q.imK⟩; ⟨-q.imJ, q.imK⟩, ⟨q.re, -q.imI⟩]
 
--- /- U ↦ SU 2 -/
--- def U_to_SU2 (q : U) : SU 2 :=
---   ⟨!![⟨q.val.re, q.val.imI⟩, ⟨q.val.imJ, q.val.imK⟩; ⟨-q.val.imJ, q.val.imK⟩, ⟨q.val.re, -q.val.imI⟩],
---   by sorry
---       ⟩
-
 lemma U_mem_SU2 (q : U) : U_to_SU2 q ∈ SU 2 := by
+  constructor
+  · sorry
+  · sorry
+
+/- U ↦ SU 2 -/
+def U_to_SU2' (q : U) : SU 2 := ⟨U_to_SU2 q, U_mem_SU2 q⟩
+
+
+lemma SU2_left_inv_U (M : SU 2) : U_to_SU2' (SU2_to_U' M) = M := by
   sorry
 
+
+lemma SU2_right_inv_U (q : U) : SU2_to_U' (U_to_SU2' q) = q := by
+  sorry
+
+lemma SU2_map_mul_U (M N : SU 2) : SU2_to_U' (M * N) = SU2_to_U' M * SU2_to_U' N := by
+  sorry
 
 
 /- SU 2 = {!![a, b; -star b, star a] | a, b ∈ ℂ, |a|² + |b|² = 1}
     a = u₁ + iv₁, b = u₂ + iv₂ → u₁² + v₁² + u₂² + v₂² = 1 -/
 def SU2_equiv_S₃ : SU 2 ≃ S₃ where
-  toFun M := ⟨SU2_to_S₃ M, SU2_norm M⟩
-  invFun x := ⟨S₃_to_SU2 x, S₃_mem_SU2 x⟩
-  left_inv := by intro M; ext i j; fin_cases i <;> fin_cases j <;> simp <;> sorry
-  right_inv := by intro x; sorry
+  toFun M := SU2_to_S₃' M
+  invFun x := S₃_to_SU2' x
+  left_inv := SU2_left_inv_S₃
+  right_inv := SU2_right_inv_S₃
 
 
 /- (u₁ + iv₁) + (u₂ + iv₂)j = u₁ + iv₁ + ju₂ + kv₂ (∵ ij = k)
     u₁² + v₁² + u₂² + v₂² = 1 -/
 def SU2_equiv_U : SU 2 ≃* U where  -- 乗法の保存
-  toFun M := ⟨SU2_to_U M, SU2_mem_U M⟩
-  invFun q := ⟨U_to_SU2 q, U_mem_SU2 q⟩
-  left_inv := by intro M; sorry
-  right_inv := by intro q; sorry
-  map_mul' := by intro M N; sorry
+  toFun M := SU2_to_U' M
+  invFun q := U_to_SU2' q
+  left_inv := SU2_left_inv_U
+  right_inv := SU2_right_inv_U
+  map_mul' := SU2_map_mul_U
 
 
 end
