@@ -254,21 +254,24 @@ def S₃ := {x : Fin 4 → ℝ | (x 0) ^ 2 + (x 1) ^ 2 + (x 2) ^ 2 + (x 3) ^ 2 =
 def U : Submonoid ℍ[ℝ] := unitary ℍ[ℝ]
 
 
+
 /- `SU 2 ↦ S³` -/
+/- SU 2 = {!![a, b; -star b, star a] | a, b ∈ ℂ, |a|² + |b|² = 1}
+    a = u₁ + iv₁, b = u₂ + iv₂ → u₁² + v₁² + u₂² + v₂² = 1
+    → (u₁, v₁, u₂, v₂) ∈ S₃ -/
 def SU2_to_S₃ (M : Matrix (Fin 2) (Fin 2) ℂ) : Fin 4 → ℝ
-  | 0 => (M 0 0).re  -- u₁
-  | 1 => (M 0 0).im  -- v₁
-  | 2 => (M 0 1).re  -- u₂
-  | 3 => (M 0 1).im  -- v₂
+  | 0 => (M 0 0).re  -- x 0 = u₁
+  | 1 => (M 0 0).im  -- x 1 = v₁
+  | 2 => (M 0 1).re  -- x 2 = u₂
+  | 3 => (M 0 1).im  -- x 3 = v₂
 
 /- u₁² + v₁² + u₂² + v₂² = 1 -/
 lemma SU2_norm (M : SU 2) : (M.val 0 0).re ^ 2 + (M.val 0 0).im ^ 2 +
     (M.val 0 1).re ^ 2 + (M.val 0 1).im ^ 2 = 1 := by
-  -- obtain ⟨h₁, h₂⟩ := M.2
-  -- have := congr_fun (congr_fun h₁.2 0) 0
-  -- simp_all [Matrix.mul_apply, Complex.ext_iff]
-  -- linarith
-  sorry
+  obtain ⟨h₁, h₂⟩ := M.2                           -- .2 ↔ .property
+  have := congr_fun (congr_fun h₁.2 0) 0           -- h₁.2 の両辺の 0 0 成分
+  simp [Matrix.mul_apply, Complex.ext_iff] at this -- 行列の積の成分, 実部•虚部
+  linarith
 
 def SU2_to_S₃' (M : SU 2) : S₃ := ⟨SU2_to_S₃ M, SU2_norm M⟩
 
@@ -278,63 +281,61 @@ def S₃_to_SU2 (x : Fin 4 → ℝ) : Matrix (Fin 2) (Fin 2) ℂ :=
   !![⟨x 0, x 1⟩, ⟨x 2, x 3⟩; ⟨-x 2, x 3⟩, ⟨x 0, -x 1⟩]
 
 lemma S₃_mem_SU2 (x : S₃): S₃_to_SU2 x ∈ SU 2 := by
-  -- constructor
-  -- · refine' Matrix.mem_unitaryGroup_iff.mpr _
-  --   ext i j ; fin_cases i <;> fin_cases j <;> norm_num [Matrix.mul_apply, S₃_to_SU2]
-  --   · norm_num [Complex.ext_iff, Complex.mul_conj]
-  --     linarith [x.2.symm]
-  --   · norm_num [Complex.ext_iff]; ring_nf
-  --     norm_num
-  --   · simp [Complex.ext_iff]; ring_nf
-  --     norm_num
-  --   · simp [Complex.ext_iff]
-  --     exact ⟨by linarith [x.2.symm], by ring⟩
-  -- · unfold S₃_to_SU2; norm_num [Complex.ext_iff]; ring_nf; norm_num [x.2]
-  --   exact x.2
-  sorry
+  constructor
+  · apply mem_unitaryGroup_iff.mpr
+    ext i j; fin_cases i <;> fin_cases j <;> simp [mul_apply, S₃_to_SU2, Complex.ext_iff, Complex.mul_conj]
+    <;> ring_nf <;> norm_num <;> linarith [x.2.symm]
+  · simp [det_fin_two, S₃_to_SU2, Complex.ext_iff]
+    ring_nf; norm_num
+    exact x.2
 
 def S₃_to_SU2' (x : S₃) : SU 2 := ⟨S₃_to_SU2 x, S₃_mem_SU2 x⟩
 
 
-
-lemma SU2_form (M : Matrix (Fin 2) (Fin 2) ℂ) :
-    M 1 0 = - star (M 0 1) ∧ M 1 1 = star (M 0 0) := by
-  sorry
+lemma SU2_form (M : SU 2) : M.val 1 0 = - star (M.val 0 1) ∧ M.val 1 1 = star (M.val 0 0) := by
+  obtain ⟨h_unitary, h_det⟩ : (∀ i j, ∑ k, M.val i k * star (M.val j k) = if i = j then 1 else 0)
+      ∧ (M.val 0 0 * M.val 1 1 - M.val 0 1 * M.val 1 0 = 1) := by
+    obtain ⟨h_unitary, h_det⟩ := M.2
+    simp_all [Matrix.mem_unitaryGroup_iff, Fin.sum_univ_two, ← Matrix.ext_iff]
+    simp_all [Matrix.mul_apply, Matrix.det_fin_two]
+  generalize_proofs at *
+  simp_all [Fin.forall_fin_two, Complex.ext_iff]
+  grobner
 
 
 lemma SU2_left_inv_S₃ (M : SU 2) : S₃_to_SU2' (SU2_to_S₃' M) = M := by
-  -- ext i j; fin_cases i <;> fin_cases j <;> simp [S₃_to_SU2', SU2_to_S₃']
-  -- · have := SU2_form M.val
-  --   simp_all [Complex.ext_iff]
-  --   exact Complex.ext_iff.mp rfl
-  -- · have := SU2_form M.val; simp_all [Complex.ext_iff]
-  --   exact Complex.ext_iff.mp rfl
-  -- · have := SU2_form M.val; simp_all [Complex.ext_iff]
-  --   exact Complex.ext_iff.mp rfl
-  -- · have := SU2_form M.val; simp_all [Complex.ext_iff]
-  --   exact Complex.ext_iff.mp rfl
-  sorry
-
+  ext i j; fin_cases i <;> fin_cases j
+  <;> simp [S₃_to_SU2', SU2_to_S₃', SU2_form, S₃_to_SU2, SU2_to_S₃]
 
 lemma SU2_right_inv_S₃ (x : S₃) : SU2_to_S₃' (S₃_to_SU2' x) = x := by
-  -- ext i; fin_cases i <;> simp [SU2_to_S₃', S₃_to_SU2'] <;> exact Real.ext_cauchy rfl
-  sorry
+  ext i; fin_cases i <;> simp [SU2_to_S₃', S₃_to_SU2', S₃_to_SU2, SU2_to_S₃]
+
+
+def SU2_equiv_S₃' : SU 2 ≃ S₃ where
+  toFun := SU2_to_S₃'
+  invFun := S₃_to_SU2'
+  left_inv := SU2_left_inv_S₃
+  right_inv := SU2_right_inv_S₃
+
 
 
 /- `SU 2 ↦ U` -/
+/-  !![a, b; -star b, star a] ∈ SU 2 ↦ a + bj ∈ U
+    a = u₁ + iv₁, b = u₂ + iv₂ → u₁² + v₁² + u₂² + v₂² = 1
+    !![u₁ + iv₁, u₂ + iv₂; -u₂ + iv₂, u₁ - iv₁] ∈ SU 2 ↦ (u₁ + iv₁) + (u₂ + iv₂)j
+    = u₁ + iv₁ + ju₂ + kv₂ ∈ U, (∵ ij = k, u₁² + u₂² + v₁² + v₂² = 1) -/
 def SU2_to_U (M : Matrix (Fin 2) (Fin 2) ℂ) : ℍ[ℝ] :=
-  ⟨(M 0 0).re, (M 0 0).im, (M 0 1).re, (M 0 1).im⟩
+  ⟨(M 0 0).re, (M 0 0).im, (M 0 1).re, (M 0 1).im⟩  -- u₁ + iv₁ + ju₂ + kv₂
 
 lemma SU2_mem_U (M : SU 2) : SU2_to_U M ∈ U := by
-  -- constructor
-  -- · ext <;> simp [mul_comm]
-  --   convert SU2_norm M using 1; ring!
-  -- · ext <;> simp
-  --   · convert SU2_norm M using 1; ring!
-  --   · ring
-  --   · ring
-  --   · ring
-  sorry
+  constructor
+  · ext <;> simp [mul_comm]
+    convert SU2_norm M using 1; ring!
+  · ext <;> simp
+    · convert SU2_norm M using 1; ring!
+    · ring
+    · ring
+    · ring
 
 def SU2_to_U' (M : SU 2) : U := ⟨SU2_to_U M, SU2_mem_U M⟩
 
@@ -343,111 +344,52 @@ def SU2_to_U' (M : SU 2) : U := ⟨SU2_to_U M, SU2_mem_U M⟩
 def U_to_SU2 (q : ℍ[ℝ]) : Matrix (Fin 2) (Fin 2) ℂ :=
   !![⟨q.re, q.imI⟩, ⟨q.imJ, q.imK⟩; ⟨-q.imJ, q.imK⟩, ⟨q.re, -q.imI⟩]
 
+
 lemma U_mem_SU2 (q : U) : U_to_SU2 q ∈ SU 2 := by
-  -- constructor
-  -- · refine' Matrix.mem_unitaryGroup_iff.mpr _
-  --   simp [← ext_iff, Fin.forall_fin_two, U_to_SU2]
-  --   have h_norm : q.val.re^2 + q.val.imI^2 + q.val.imJ^2 + q.val.imK^2 = 1 := by
-  --     have h := congr_arg (fun x : ℍ[ℝ] => x.re) q.2.2
-  --     simp only [Quaternion.re_mul] at h
-  --     simp only [Quaternion.re_star, Quaternion.imI_star, Quaternion.imJ_star,
-  --       Quaternion.imK_star, Quaternion.re_one] at h
-  --     linarith [h]
-  --   simp [vecMul, dotProduct, Complex.ext_iff]
-  --   ring_nf; norm_num; exact h_norm
-  -- · simp [det_fin_two, U_to_SU2]
-  --   obtain ⟨q_val, hq⟩ := q
-  --   have := hq.1; simp_all [Complex.ext_iff, Quaternion.ext_iff]
-  --   constructor <;> linarith
-  sorry
+  constructor
+  · apply Matrix.mem_unitaryGroup_iff.mpr
+    simp [← ext_iff, Fin.forall_fin_two, U_to_SU2]
+    have h_norm : q.val.re^2 + q.val.imI^2 + q.val.imJ^2 + q.val.imK^2 = 1 := by
+      have h := congr_arg (fun x : ℍ[ℝ] => x.re) q.2.2
+      simp only [Quaternion.re_mul] at h
+      simp only [Quaternion.re_star, Quaternion.imI_star, Quaternion.imJ_star,
+        Quaternion.imK_star, Quaternion.re_one] at h
+      linarith [h]
+    simp [vecMul, dotProduct, Complex.ext_iff]
+    ring_nf; norm_num; exact h_norm
+  · simp [det_fin_two, U_to_SU2]
+    obtain ⟨q_val, hq⟩ := q
+    have := hq.1; simp_all [Complex.ext_iff, Quaternion.ext_iff]
+    constructor <;> linarith
+
 
 def U_to_SU2' (q : U) : SU 2 := ⟨U_to_SU2 q, U_mem_SU2 q⟩
 
 
-
-lemma SU2_left_inv_U (M : SU 2) : U_to_SU2' (SU2_to_U' M) = M := by
-  -- convert SU2_left_inv_S₃ M
-  -- exact SetLike.coe_eq_coe.mp rfl
-  sorry
+lemma SU2_left_inv_U (M: SU 2) : U_to_SU2' (SU2_to_U' M) = M := by
+  ext i j; fin_cases i <;> fin_cases j
+  <;> simp [U_to_SU2', SU2_to_U', SU2_form, U_to_SU2, SU2_to_U]
 
 
 lemma SU2_right_inv_U (q : U) : SU2_to_U' (U_to_SU2' q) = q := by
-  -- unfold SU2_to_U' U_to_SU2'; exact SetLike.coe_eq_coe.mp rfl
-  sorry
+  simp [U_to_SU2', SU2_to_U', U_to_SU2, SU2_to_U]
 
 
 lemma SU2_map_mul_U (M N : SU 2) : SU2_to_U' (M * N) = SU2_to_U' M * SU2_to_U' N := by
-  sorry
-
-
-/- SU 2 = {!![a, b; -star b, star a] | a, b ∈ ℂ, |a|² + |b|² = 1}
-    a = u₁ + iv₁, b = u₂ + iv₂ → u₁² + v₁² + u₂² + v₂² = 1 -/
-def SU2_equiv_S₃ : SU 2 ≃ S₃ where
-  toFun := SU2_to_S₃'
-  invFun := S₃_to_SU2'
-  left_inv := SU2_left_inv_S₃
-  right_inv := SU2_right_inv_S₃
+  have h_norm : (M.val 0 0).re^2 + (M.val 0 0).im^2 + (M.val 0 1).re^2 + (M.val 0 1).im^2 = 1 := by
+    exact SU2_norm M
+  have h_norm' : (N.val 0 0).re^2 + (N.val 0 0).im^2 + (N.val 0 1).re^2 + (N.val 0 1).im^2 = 1 := by
+    exact SU2_norm N
+  ext <;> simp [SU2_to_U', SU2_to_U, mul_apply] <;> sorry
 
 
 
-lemma SU2_left_inv_S₃' (M : Matrix (Fin 2) (Fin 2) ℂ) : S₃_to_SU2 (SU2_to_S₃ M) = M := by
-  -- ext i j; fin_cases i <;> fin_cases j <;> simp [S₃_to_SU2, SU2_to_S₃]
-  -- · have := SU2_form M
-  --   simp_all [Complex.ext_iff]
-  -- · have := SU2_form M; simp_all [Complex.ext_iff]
-  sorry
-
-
-lemma SU2_right_inv_S₃' (x : Fin 4 → ℝ) : SU2_to_S₃ (S₃_to_SU2 x) = x := by
-  -- ext i; fin_cases i <;> simp [SU2_to_S₃, S₃_to_SU2]
-  sorry
-
-
-def SU2_equiv_S₃' : SU 2 ≃ S₃ where
-  toFun M := ⟨SU2_to_S₃ M.val, SU2_norm M⟩
-  invFun x := ⟨S₃_to_SU2 x.val, S₃_mem_SU2 x⟩
-  left_inv M := Subtype.ext (SU2_left_inv_S₃' M.val)
-  right_inv x := Subtype.ext (SU2_right_inv_S₃' x.val)
-
-
-/- (u₁ + iv₁) + (u₂ + iv₂)j = u₁ + iv₁ + ju₂ + kv₂ (∵ ij = k)
-    u₁² + v₁² + u₂² + v₂² = 1 -/
-def SU2_equiv_U : SU 2 ≃* U where  -- 乗法の保存
+def SU2_equiv_U' : SU 2 ≃* U where  -- 乗法の保存
   toFun M := SU2_to_U' M
   invFun q := U_to_SU2' q
   left_inv := SU2_left_inv_U
   right_inv := SU2_right_inv_U
   map_mul' := SU2_map_mul_U
-
-
-
-lemma SU2_left_inv_U' (M : Matrix (Fin 2) (Fin 2) ℂ) : U_to_SU2 (SU2_to_U M) = M := by
-    -- convert SU2_left_inv_S₃' M
-    -- exact Matrix.ext fun i => congrFun rfl
-  sorry
-
-
-lemma SU2_right_inv_U' (q : ℍ[ℝ]) : SU2_to_U (U_to_SU2 q) = q := by
-  -- unfold SU2_to_U U_to_SU2; simp
-  sorry
-
-lemma SU2_map_mul_U' (M N : Matrix (Fin 2) (Fin 2) ℂ) : SU2_to_U (M * N) = SU2_to_U M * SU2_to_U N := by
-  -- unfold SU2_to_U
-  -- simp [Matrix.mul_apply, Fin.sum_univ_succ]
-  -- congr 1 <;> norm_num [Quaternion.ext_iff]
-  -- · rw [SU2_form N |>.1]; norm_num; ring
-  -- · rw [SU2_form N |>.1]; norm_num; ring
-  -- · rw [show (N 1 1 : ℂ) = star (N 0 0) by exact SU2_form N |>.2]; norm_num; ring
-  -- · rw [SU2_form N |>.2]; norm_num; ring
-  sorry
-
-
-def SU2_equiv_U' : SU 2 ≃* U where  -- 乗法の保存
-  toFun M := ⟨SU2_to_U M, SU2_mem_U M⟩
-  invFun q := ⟨U_to_SU2 q, U_mem_SU2 q⟩
-  left_inv M := Subtype.ext (SU2_left_inv_U' M.val)
-  right_inv q := Subtype.ext (SU2_right_inv_U' q.val)
-  map_mul' M N := Subtype.ext (SU2_map_mul_U' M.val N.val)
 
 
 end
