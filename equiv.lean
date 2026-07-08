@@ -318,7 +318,6 @@ def SU2_equiv_S₃' : SU 2 ≃ S₃ where
   right_inv := SU2_right_inv_S₃
 
 
-
 /- `SU 2 ↦ U` -/
 /-  !![a, b; -star b, star a] ∈ SU 2 ↦ a + bj ∈ U
     a = u₁ + iv₁, b = u₂ + iv₂ → u₁² + v₁² + u₂² + v₂² = 1
@@ -328,14 +327,8 @@ def SU2_to_U (M : Matrix (Fin 2) (Fin 2) ℂ) : ℍ[ℝ] :=
   ⟨(M 0 0).re, (M 0 0).im, (M 0 1).re, (M 0 1).im⟩  -- u₁ + iv₁ + ju₂ + kv₂
 
 lemma SU2_mem_U (M : SU 2) : SU2_to_U M ∈ U := by
-  constructor
-  · ext <;> simp [mul_comm]
-    convert SU2_norm M using 1; ring!
-  · ext <;> simp
-    · convert SU2_norm M using 1; ring!
-    · ring
-    · ring
-    · ring
+  constructor <;> ext
+  <;> simp [mul_comm, SU2_to_U, ← SU2_norm M] <;> ring
 
 def SU2_to_U' (M : SU 2) : U := ⟨SU2_to_U M, SU2_mem_U M⟩
 
@@ -346,19 +339,17 @@ def U_to_SU2 (q : ℍ[ℝ]) : Matrix (Fin 2) (Fin 2) ℂ :=
 
 
 lemma U_mem_SU2 (q : U) : U_to_SU2 q ∈ SU 2 := by
-  constructor
+  constructor <;> simp [U_to_SU2]
   · apply Matrix.mem_unitaryGroup_iff.mpr
-    simp [← ext_iff, Fin.forall_fin_two, U_to_SU2]
+    simp [← ext_iff, Fin.forall_fin_two]
     have h_norm : q.val.re^2 + q.val.imI^2 + q.val.imJ^2 + q.val.imK^2 = 1 := by
       have h := congr_arg (fun x : ℍ[ℝ] => x.re) q.2.2
-      simp only [Quaternion.re_mul] at h
-      simp only [Quaternion.re_star, Quaternion.imI_star, Quaternion.imJ_star,
-        Quaternion.imK_star, Quaternion.re_one] at h
+      simp only [Quaternion.re_mul, Quaternion.re_star, Quaternion.imI_star,
+        Quaternion.imJ_star, Quaternion.imK_star, Quaternion.re_one] at h
       linarith [h]
     simp [vecMul, dotProduct, Complex.ext_iff]
     ring_nf; norm_num; exact h_norm
-  · simp [det_fin_two, U_to_SU2]
-    obtain ⟨q_val, hq⟩ := q
+  · obtain ⟨q_val, hq⟩ := q
     have := hq.1; simp_all [Complex.ext_iff, Quaternion.ext_iff]
     constructor <;> linarith
 
@@ -366,7 +357,7 @@ lemma U_mem_SU2 (q : U) : U_to_SU2 q ∈ SU 2 := by
 def U_to_SU2' (q : U) : SU 2 := ⟨U_to_SU2 q, U_mem_SU2 q⟩
 
 
-lemma SU2_left_inv_U (M: SU 2) : U_to_SU2' (SU2_to_U' M) = M := by
+lemma SU2_left_inv_U (M : SU 2) : U_to_SU2' (SU2_to_U' M) = M := by
   ext i j; fin_cases i <;> fin_cases j
   <;> simp [U_to_SU2', SU2_to_U', SU2_form, U_to_SU2, SU2_to_U]
 
@@ -376,15 +367,16 @@ lemma SU2_right_inv_U (q : U) : SU2_to_U' (U_to_SU2' q) = q := by
 
 
 lemma SU2_map_mul_U (M N : SU 2) : SU2_to_U' (M * N) = SU2_to_U' M * SU2_to_U' N := by
-  have h_norm : (M.val 0 0).re^2 + (M.val 0 0).im^2 + (M.val 0 1).re^2 + (M.val 0 1).im^2 = 1 := by
-    exact SU2_norm M
-  have h_norm' : (N.val 0 0).re^2 + (N.val 0 0).im^2 + (N.val 0 1).re^2 + (N.val 0 1).im^2 = 1 := by
-    exact SU2_norm N
-  ext <;> simp [SU2_to_U', SU2_to_U, mul_apply] <;> sorry
+  apply Subtype.ext _
+  apply Quaternion.ext_iff.mpr _
+  simp [SU2_to_U', SU2_to_U, Matrix.mul_apply, Fin.sum_univ_two]
+  have hM := SU2_form M
+  have hN := SU2_form N
+  simp_all [Complex.ext_iff]
+  exact ⟨by ring, by ring, by ring, by ring⟩
 
 
-
-def SU2_equiv_U' : SU 2 ≃* U where  -- 乗法の保存
+def SU2_equiv_U : SU 2 ≃* U where  -- 乗法の保存
   toFun M := SU2_to_U' M
   invFun q := U_to_SU2' q
   left_inv := SU2_left_inv_U
