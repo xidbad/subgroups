@@ -20,3 +20,12 @@ git = "https://github.com/PatrickMassot/checkdecls.git"
 name = "«doc-gen4»"
 git = "https://github.com/leanprover/doc-gen4"
 rev = "main"
+
+[[require]]
+name = "checkdecls"
+git = "https://github.com/PatrickMassot/checkdecls.git"
+
+[[require]]
+name = "«doc-gen4»"
+git = "https://github.com/leanprover/doc-gen4"
+rev = "main"
