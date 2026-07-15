@@ -382,6 +382,16 @@ def SU2_equiv_U : SU 2 ≃* U where  -- 積の構造を保つ
   map_mul' := SU2_map_mul_U
 
 
+
+/-- SO(3) --/
+def SO3 := specialOrthogonalGroup (Fin 3) ℝ
+
+
+
+
+
+
+
 end
 
 
