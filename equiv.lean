@@ -1,8 +1,10 @@
 import Mathlib.Algebra.Quaternion
+import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 import Mathlib.Analysis.CStarAlgebra.Classes
 import Mathlib.Analysis.InnerProductSpace.Defs
 import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 import Mathlib.LinearAlgebra.UnitaryGroup
+
 
 open MatrixGroups Matrix Complex SpecialLinearGroup Quaternion
 
@@ -17,8 +19,11 @@ variable (G : Subgroup SL(2, ℂ)) [Fintype G]
 
 notation "⟪"u", "v"⟫" => star u ⬝ᵥ v  -- 標準内積
 
-def SU (n : ℕ) := specialUnitaryGroup (Fin n) ℂ
+/- `Definition8` -/
+abbrev SU (n : ℕ) := specialUnitaryGroup (Fin n) ℂ
 
+
+/- `Proposition10` -/
 /-- 部分群 `G ≤ SL(2, ℂ)` の `ℂ² = (Fin 2 → ℂ)` 上への標準表現：
 `ρ g u = g *ᵥ u`（`g` を行列とみなした行列・ベクトル積）。 -/
 def ρ {G : Subgroup SL(2, ℂ)} (g : G) (u : Fin 2 → ℂ) : Fin 2 → ℂ :=
@@ -34,12 +39,12 @@ notation "⟪"u", "v"⟫_G" => avgInner G u v
 
 -- 第一引数の加法性
 lemma avgInner_add_left (u v w : Fin 2 → ℂ) : ⟪u + v, w⟫_G = ⟪u, w⟫_G + ⟪v, w⟫_G := by
-  simp [avgInner, ρ, Matrix.mulVec_add, Finset.sum_add_distrib]; ring
+  simp [avgInner, ρ, mulVec_add, Finset.sum_add_distrib]; ring
 
 -- 第一引数のスカラー同次性
 lemma avgInner_smul_left (c : ℂ) (u v : Fin 2 → ℂ) :
     ⟪c • u, v⟫_G = (starRingEnd ℂ) c * ⟪u, v⟫_G := by
-  simp [avgInner, ρ, Matrix.mulVec_smul, Finset.mul_sum _ _ _, mul_left_comm]
+  simp [avgInner, ρ, mulVec_smul, Finset.mul_sum _ _ _, mul_left_comm]
 
 -- 共役対称性
 lemma avgInner_conj_symm (u v : Fin 2 → ℂ) : ⟪u, v⟫_G = (starRingEnd ℂ) (⟪v, u⟫_G) := by
@@ -70,12 +75,6 @@ lemma avgInner_self_eq_zero {u : Fin 2 → ℂ} (h : ⟪u, u⟫_G = 0) : u = 0 :
   · unfold ρ; simp
     exact not_le.mp fun h' => h <| by ext i; fin_cases i <;> norm_num [Complex.ext_iff] <;> constructor <;> nlinarith
   · nlinarith
-
-  -- contrapose! h with h_nonzero
-  -- unfold avgInner
-  -- obtain ⟨g, hg⟩ : ∃ g : G, ρ g u ≠ 0 := by exact ⟨1, by simpa [ρ] using h_nonzero⟩
-  -- refine' ne_of_apply_ne Complex.re _; norm_num [Complex.ext_iff] at *
-  -- exact ne_of_gt <| lt_of_lt_of_le (by exact lt_of_le_of_ne (by nlinarith) <| Ne.symm <| by intro H; exact hg <| by ext i; fin_cases i <;> norm_num [Complex.ext_iff] <;> constructor <;> nlinarith) <| Finset.single_le_sum (fun x _ => by nlinarith) <| Finset.mem_univ g
 
 
 -- G-不変性(ユニタリ性)
@@ -140,7 +139,7 @@ theorem conj_mem_SU (g : G) (U : Matrix (Fin 2) (Fin 2) ℂ) (hUinv : IsUnit U.d
 
 
 /-  `Quaternion` -/
-
+/- `Definition12` -/
 namespace Quaternion
 
 /-- `ℍ[ℝ] : Type := Quaternion ℝ, a + b i + c j + d k (a, b, c, d ∈ ℝ)`
@@ -153,14 +152,17 @@ def qj : ℍ[ℝ] := ⟨0, 0, 1, 0⟩
 
 def qk : ℍ[ℝ]  := ⟨0, 0, 0, 1⟩
 
+
 /-- 任意の四元数は実数係数の基底の線形結合として表される。 -/
-theorem H_eq (a b c d : ℝ) :
+lemma H_eq (a b c d : ℝ) :
     (⟨a, b, c, d⟩ : ℍ[ℝ]) = a • (1 : ℍ[ℝ]) + b • qi + c • qj + d • qk := by
   ext <;> simp [qi, qj, qk]
 
+
 /-- 実数体上の4次元ベクトル空間である。 -/
-theorem finrank_H : Module.finrank ℝ ℍ[ℝ] = 4 := by
+lemma finrank_H : Module.finrank ℝ ℍ[ℝ] = 4 := by
   rw [finrank_eq_four]
+
 
 /-`The multiplication law` -/
 
@@ -204,7 +206,6 @@ def qsmul (r : ℝ) (x : ℍ[ℝ]) : ℍ[ℝ] :=
   ⟨r * x.re, r * x.imI, r * x.imJ, r * x.imK⟩
 
 
-
 /- 乗法 -/
 def qmul (x y : ℍ[ℝ]) : ℍ[ℝ] :=
   ⟨x.re * y.re - x.imI * y.imI - x.imJ * y.imJ - x.imK * y.imK,
@@ -246,7 +247,7 @@ theorem real_add_imaginary (q : ℍ[ℝ]) :
 end Quaternion
 
 
-
+/- `Proposition13` -/
 -- 3次元球面 : {(x₁, x₂, x₃, x₄) ∈ ℝ⁴ | x₁² + x₂² + x₃² + x₄² = 1}
 def S₃ := {x : Fin 4 → ℝ | (x 0) ^ 2 + (x 1) ^ 2 + (x 2) ^ 2 + (x 3) ^ 2 = 1}
 
@@ -382,17 +383,86 @@ def SU2_equiv_U : SU 2 ≃* U where  -- 積の構造を保つ
   map_mul' := SU2_map_mul_U
 
 
-
-/-- SO(3) --/
-def SO3 := specialOrthogonalGroup (Fin 3) ℝ
-
-
+/- `Definition14` -/
+/-- SO(3) := {R ∈ O(3) | det R = 1}, O(3) := {Q ∈ GL(3, ℝ) | Qᵗ = Q⁻¹} --/
+def SO3 := specialOrthogonalGroup (Fin 3) ℝ  -- 特殊直交群、回転群
 
 
+/- `Theorem15`-/
+def minusI : SU 2 := ⟨-1, by
+  constructor
+  · simp [Matrix.mem_unitaryGroup_iff]
+  · simp [Matrix.det_fin_two]⟩
 
+
+/- {I, -I} : -I によって生成される最小の部分群 -/
+def plusminusI : Subgroup (SU 2) := Subgroup.closure {minusI}
+
+
+-- structure SU2SO3DoubleCover where
+--   toMonoidHom : SU 2 →* SO3
+--   surjective : Function.Surjective toMonoidHom
+--   ker_eq_plusminusI : toMonoidHom.ker = plusminusI
+
+
+-- variable (π : SU2SO3DoubleCover)
+
+
+-- lemma kernel_eq : π.toMonoidHom.ker = plusminusI :=
+--   π.ker_eq_plusminusI
+
+-- def quotientKernelEquivSO3 : SU 2 ⧸ π.toMonoidHom.ker ≃* SO3 :=
+--   QuotientGroup.quotientKerEquivOfSurjective π.toMonoidHom π.surjective
+
+
+/-- `実四元数 ℝ`  -/
+def real := {x : ℍ[ℝ] | x.imI = 0 ∧ x.imJ = 0 ∧ x.imK = 0}
+
+/-- `純虚四元数 ℝ³` -/
+def PureImaginary := {x : ℍ[ℝ] | x.re = 0}
+
+
+def rotate (q : U) (x : PureImaginary) : ℍ[ℝ] :=
+  q.val * x.val * star q.val
+
+
+lemma prop1 (q : U) (x : PureImaginary) (q_real : q.val.im = 0) : rotate q x = x := by
+  sorry
+
+
+lemma prop2 (q : U) (x : PureImaginary) (q_im : q.val.re = 0) : rotate q x = -rotate q x := by
+  sorry
+
+
+
+
+theorem theorem_15 : ∃ π : SU 2 →* SO3, Function.Surjective π ∧ MonoidHom.ker π = plusminusI := by
+  sorry
+
+
+
+theorem homomor (π : SU 2 →* SO3) (hsurj : Function.Surjective π) :
+    Nonempty (SU 2 ⧸ MonoidHom.ker π ≃* SO3) := by
+  sorry
+
+
+
+theorem Theorem15
+    {SU2 SO3 : Type*} [Group SU2] [Group SO3]
+    (K : Subgroup SU2) [K.Normal] (piHom : SU2 →* SO3)
+    (hker : MonoidHom.ker piHom = K) (hsurj : Function.Surjective piHom) :
+    Nonempty (SU2 ⧸ K ≃* SO3) := by
+  refine ⟨?_⟩
+  convert QuotientGroup.quotientKerEquivOfSurjective piHom hsurj <;> exact hker.symm
+
+
+theorem Theorem15_quotient_kernel
+    {SU2 SO3 : Type*} [Group SU2] [Group SO3]
+    (piHom : SU2 →* SO3) (hsurj : Function.Surjective piHom) :
+    Nonempty (SU2 ⧸ MonoidHom.ker piHom ≃* SO3) := by
+  exact ⟨ QuotientGroup.quotientKerEquivOfSurjective _ hsurj ⟩
 
 
 end
-
 
 #min_imports
