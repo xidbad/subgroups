@@ -160,8 +160,7 @@ lemma H_eq (a b c d : ℝ) :
 
 
 /-- 実数体上の4次元ベクトル空間である。 -/
-lemma finrank_H : Module.finrank ℝ ℍ[ℝ] = 4 := by
-  rw [finrank_eq_four]
+lemma finrank_H : Module.finrank ℝ ℍ[ℝ] = 4 := by rw [finrank_eq_four]
 
 
 /-`The multiplication law` -/
@@ -249,10 +248,10 @@ end Quaternion
 
 /- `Proposition13` -/
 -- 3次元球面 : {(x₁, x₂, x₃, x₄) ∈ ℝ⁴ | x₁² + x₂² + x₃² + x₄² = 1}
-def S₃ := {x : Fin 4 → ℝ | (x 0) ^ 2 + (x 1) ^ 2 + (x 2) ^ 2 + (x 3) ^ 2 = 1}
+abbrev S₃ := {x : Fin 4 → ℝ | (x 0) ^ 2 + (x 1) ^ 2 + (x 2) ^ 2 + (x 3) ^ 2 = 1}
 
 -- 単位四元数 : {q ∈ ℍ[ℝ] | q * star q = 1}
-def U : Submonoid ℍ[ℝ] := unitary ℍ[ℝ]
+abbrev U : Submonoid ℍ[ℝ] := unitary ℍ[ℝ]
 
 
 
@@ -385,7 +384,93 @@ def SU2_equiv_U : SU 2 ≃* U where  -- 積の構造を保つ
 
 /- `Definition14` -/
 /-- SO(3) := {R ∈ O(3) | det R = 1}, O(3) := {Q ∈ GL(3, ℝ) | Qᵗ = Q⁻¹} --/
-def SO3 := specialOrthogonalGroup (Fin 3) ℝ  -- 特殊直交群、回転群
+abbrev SO (n : ℕ)  := specialOrthogonalGroup (Fin n) ℝ  -- 特殊直交群、回転群
+
+
+/- `Theorem15`
+    π : SU 2 → SO 3, ker π = {-I, I} となる全射準同型写像が存在する.
+    ⟹ SU 2 ⧸ ker π ≃* SO 3
+    U ≃* SU 2 より, h : U → SO 3, ker h = {-1, 1} を満たす全射準同型があれば, π = h ∘ f⁻¹ (f = U_to_SU 2)
+-/
+
+/-- `実四元数 ℝ`  -/
+def real := {x : ℍ[ℝ] | x.im = 0}-- ∧ x.imJ = 0 ∧ x.imK = 0} -- {x.im = 0}?
+
+
+/-- `純虚四元数`, ℝ³ とみなせる` -/
+def PureImaginary := {x : ℍ[ℝ] | x.re = 0}
+
+/-- U の ℝ³ への作用 -/
+def r_q (q : U) (x : PureImaginary) : ℍ[ℝ] := q.val * x.val * star q.val
+
+-- def r_q (q : U) (x : PureImaginary) : PureImaginary ≃ₗᵢ[ℝ] PureImaginary :=
+
+
+
+-- def r_q_pureim (q : U) (x : PureImaginary) : PureImaginary :=
+--   ⟨q.val * x.val * star q.val, by
+--     have h : x.val.re = 0 := x.prop
+--     simp [PureImaginary, h]; ring_nf⟩
+
+/-- r_q : 純虚四元数を保つ -/
+lemma r_q_pureim : r_q q x ∈ PureImaginary := by
+  have h : x.val.re = 0 := x.prop
+  simp [r_q, PureImaginary, h]; ring_nf
+
+
+variable (q : U) (x : PureImaginary)
+
+
+/-- h (q) = r_q (x) -/
+def h (q : U) : ℍ[ℝ] := r_q q x
+
+
+/-- h が準同型写像であること -/
+
+lemma h_homomor (p : U) : h (q * p) = h q ∘ h p := by
+  sorry
+
+
+lemma r_q_homomorphism (p : U) : r_q (q * p) x = r_q q x ∘ r_q p x := by
+  have h : r_q p x ∈ PureImaginary := r_q_pureim
+  calc
+    r_q (q * p) x = (q.val * p.val) * x.val * star (q.val * p.val) := by simp [r_q]
+    _ = q.val * (p.val * x.val * star p.val) * star q.val := by simp only [star_mul, mul_assoc]
+
+    _ = r_q q x ∘ r_q p x := by sorry
+
+
+
+/-- 長さを変えない isometry -/
+lemma isometry : ‖r_q q x‖ = ‖x.val‖ :=
+  calc
+    ‖r_q q x‖ = ‖q.val * x.val * star q.val‖ := by rw [r_q]
+    _ = ‖q.val‖ * ‖x.val‖ * ‖star q.val‖ := by sorry
+    _ = 1 * ‖x.val‖ * 1 := by
+      have := q.prop.2
+
+    _ = ‖x.val‖ := by rw [mul_one, one_mul]
+
+
+
+/-- q = a + bi + cj + dk ∈ U → a² + (b² + c² + d²) = 1 = cos²θ + sin²θ
+    a = cosθ, √(b² + c² + d²) = sinθ なる θ ∈ [0, π] がただ一つ定まる.
+    ここで, I := (1 / √(b² + c² + d²)) * (bi + cj + dk) = b'i + c'j + d'k (正規化) とする.
+    I² = -1 を満たし、虚数単位 i とみなせる. q = cosθ + simθI と表せる.
+    I に沿って,標準直交基底 J, K を作り, それぞれに r_q を作用させる. (四元数の規則を満たす)
+    r_q q I = I, r_q q J = (cos2θ)J + (sin2θ)K, r_q q K = (-sin2θ)J + (cos2θ)K
+    ∴ (r_q q J, r_q q K)ᵗ = !![cos2θ, sin2θ; -sin2θ, cos2θ] * (J, K)ᵗ
+    → r_q q x は I で定義される軸の周りに, JK平面(R²) を 2θ 回転させる変換
+    軸を一つ決めて(= I), 回転を φ ∈ [0, 2π]とすると, θ = φ/2, q = cos(φ/2) + sin(φ/2)I とすれば
+    SO 3 の任意の元を表せる → 全射性
+    ker h = {q ∈ U | h q = r_q q x = q * x * qᴴ = x} (SO3 の単位元は恒等変換)
+    θ = 0, π のとき i.e. q = -1, 1.
+-/
+
+
+def minusone : U := ⟨-1, by constructor <;> simp [Quaternion.ext_iff]⟩
+
+def plusminusone : Subgroup U := Subgroup.closure {minusone}
 
 
 /- `Theorem15`-/
@@ -399,68 +484,21 @@ def minusI : SU 2 := ⟨-1, by
 def plusminusI : Subgroup (SU 2) := Subgroup.closure {minusI}
 
 
--- structure SU2SO3DoubleCover where
---   toMonoidHom : SU 2 →* SO3
---   surjective : Function.Surjective toMonoidHom
---   ker_eq_plusminusI : toMonoidHom.ker = plusminusI
-
-
--- variable (π : SU2SO3DoubleCover)
-
-
--- lemma kernel_eq : π.toMonoidHom.ker = plusminusI :=
---   π.ker_eq_plusminusI
-
--- def quotientKernelEquivSO3 : SU 2 ⧸ π.toMonoidHom.ker ≃* SO3 :=
---   QuotientGroup.quotientKerEquivOfSurjective π.toMonoidHom π.surjective
-
-
-/-- `実四元数 ℝ`  -/
-def real := {x : ℍ[ℝ] | x.imI = 0 ∧ x.imJ = 0 ∧ x.imK = 0}
-
-/-- `純虚四元数 ℝ³` -/
-def PureImaginary := {x : ℍ[ℝ] | x.re = 0}
-
-
-def rotate (q : U) (x : PureImaginary) : ℍ[ℝ] :=
-  q.val * x.val * star q.val
-
-
-lemma prop1 (q : U) (x : PureImaginary) (q_real : q.val.im = 0) : rotate q x = x := by
+lemma pre15 : ∃ h : U →* SO 3, Function.Surjective h ∧ h.ker = plusminusone := by
   sorry
 
 
-lemma prop2 (q : U) (x : PureImaginary) (q_im : q.val.re = 0) : rotate q x = -rotate q x := by
+/-- π = h ∘ f⁻¹ : SU 2 → U → SO3, f = U_to_SU2 -/
+theorem theorem_15 : ∃ π : SU 2 →* SO 3, Function.Surjective π ∧ π.ker = plusminusI := by
   sorry
 
 
 
 
-theorem theorem_15 : ∃ π : SU 2 →* SO3, Function.Surjective π ∧ MonoidHom.ker π = plusminusI := by
-  sorry
+def theorem15 [plusminusI.Normal] (π : SU 2 →* SO 3) (surj : Function.Surjective π)
+    (kern : π.ker = plusminusI) : SU 2 ⧸ plusminusI ≃* SO 3 :=
+  (QuotientGroup.quotientMulEquivOfEq kern.symm).trans (QuotientGroup.quotientKerEquivOfSurjective π surj)
 
-
-
-theorem homomor (π : SU 2 →* SO3) (hsurj : Function.Surjective π) :
-    Nonempty (SU 2 ⧸ MonoidHom.ker π ≃* SO3) := by
-  sorry
-
-
-
-theorem Theorem15
-    {SU2 SO3 : Type*} [Group SU2] [Group SO3]
-    (K : Subgroup SU2) [K.Normal] (piHom : SU2 →* SO3)
-    (hker : MonoidHom.ker piHom = K) (hsurj : Function.Surjective piHom) :
-    Nonempty (SU2 ⧸ K ≃* SO3) := by
-  refine ⟨?_⟩
-  convert QuotientGroup.quotientKerEquivOfSurjective piHom hsurj <;> exact hker.symm
-
-
-theorem Theorem15_quotient_kernel
-    {SU2 SO3 : Type*} [Group SU2] [Group SO3]
-    (piHom : SU2 →* SO3) (hsurj : Function.Surjective piHom) :
-    Nonempty (SU2 ⧸ MonoidHom.ker piHom ≃* SO3) := by
-  exact ⟨ QuotientGroup.quotientKerEquivOfSurjective _ hsurj ⟩
 
 
 end
