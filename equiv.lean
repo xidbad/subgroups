@@ -330,6 +330,10 @@ lemma SU2_mem_U (M : SU 2) : SU2_to_U M.val ∈ U := by
   constructor <;> ext
   <;> simp [mul_comm, SU2_to_U, ← SU2_norm M] <;> ring
 
+-- lemma SU2_mem_U' (M : SU 2) : SU2_to_U M.val ∈ U' := by
+--   simp [U', norm_eq]
+--   simp [SU2_to_U, ← SU2_norm M]; ring
+
 def SU2_to_U' (M : SU 2) : U := ⟨SU2_to_U M.val, SU2_mem_U M⟩
 
 
@@ -351,6 +355,25 @@ lemma U_mem_SU2 (q : U) : U_to_SU2 q.val ∈ SU 2 := by
   · have hq : star q.val * q.val = 1 := q.2.1
     simp_all [Complex.ext_iff, Quaternion.ext_iff]
     constructor <;> linarith
+
+-- lemma U'_mem_SU2 (q : U') : U_to_SU2 q.val ∈ SU 2 := by
+--   constructor <;> simp [U_to_SU2]
+--   · apply Matrix.mem_unitaryGroup_iff.mpr
+--     simp [← ext_iff, Fin.forall_fin_two]
+--     have h_norm : q.val.re^2 + q.val.imI^2 + q.val.imJ^2 + q.val.imK^2 = 1 := by
+--       have h := q.property
+--       dsimp [U'] at h
+--       -- have h := congr_arg (fun x : ℍ[ℝ] => x.re) q.2.2  -- q * star q = 1 の実部
+--       simp [norm_eq] at h
+--       linarith [h]
+--     simp [vecMul, dotProduct, Complex.ext_iff]
+--     ring_nf; norm_num; exact h_norm
+--   · have hq : q.val * star q.val = 1 := by
+--       have := q.prop
+--       simp [U', norm_eq, ← pow_two] at this
+
+--     simp_all [Complex.ext_iff, Quaternion.ext_iff]
+--     constructor <;> linarith
 
 def U_to_SU2' (q : U) : SU 2 := ⟨U_to_SU2 q.val, U_mem_SU2 q⟩
 
@@ -386,6 +409,7 @@ def SU2_equiv_U : SU 2 ≃* U where  -- 積の構造を保つ
 /-- SO(3) := {R ∈ O(3) | det R = 1}, O(3) := {Q ∈ GL(3, ℝ) | Qᵗ = Q⁻¹} --/
 abbrev SO (n : ℕ)  := specialOrthogonalGroup (Fin n) ℝ  -- 特殊直交群、回転群
 
+abbrev U' := {q : ℍ[ℝ] | ‖q‖ = 1}
 
 /- `Theorem15`
     π : SU 2 → SO 3, ker π = {-I, I} となる全射準同型写像が存在する.
@@ -400,64 +424,92 @@ def real := {x : ℍ[ℝ] | x.im = 0}-- ∧ x.imJ = 0 ∧ x.imK = 0} -- {x.im = 
 /-- `純虚四元数`, ℝ³ とみなせる` -/
 def PureImaginary := {x : ℍ[ℝ] | x.re = 0}
 
+
+variable (q : U) (x : PureImaginary)
+
 /-- U の ℝ³ への作用 -/
-def r_q (q : U) (x : PureImaginary) : ℍ[ℝ] := q.val * x.val * star q.val
+def r_q (q : U) (x : ℍ[ℝ]) : ℍ[ℝ] := (q : ℍ[ℝ]) * x * star (q : ℍ[ℝ])
 
--- def r_q (q : U) (x : PureImaginary) : PureImaginary ≃ₗᵢ[ℝ] PureImaginary :=
+/-- h(q) = r_q(x) と定義 -/
+def h (q : U) : ℍ[ℝ] → ℍ[ℝ] := fun x => r_q q x
 
-
-
--- def r_q_pureim (q : U) (x : PureImaginary) : PureImaginary :=
---   ⟨q.val * x.val * star q.val, by
---     have h : x.val.re = 0 := x.prop
---     simp [PureImaginary, h]; ring_nf⟩
 
 /-- r_q : 純虚四元数を保つ -/
-lemma r_q_pureim : r_q q x ∈ PureImaginary := by
+lemma r_q_pureim (q : U) (x : PureImaginary) : r_q q x ∈ PureImaginary := by
   have h : x.val.re = 0 := x.prop
   simp [r_q, PureImaginary, h]; ring_nf
 
 
-variable (q : U) (x : PureImaginary)
-
-
-/-- h (q) = r_q (x) -/
-def h (q : U) : ℍ[ℝ] := r_q q x
-
-
 /-- h が準同型写像であること -/
-
-lemma h_homomor (p : U) : h (q * p) = h q ∘ h p := by
-  sorry
-
-
-lemma r_q_homomorphism (p : U) : r_q (q * p) x = r_q q x ∘ r_q p x := by
-  have h : r_q p x ∈ PureImaginary := r_q_pureim
-  calc
-    r_q (q * p) x = (q.val * p.val) * x.val * star (q.val * p.val) := by simp [r_q]
-    _ = q.val * (p.val * x.val * star p.val) * star q.val := by simp only [star_mul, mul_assoc]
-
-    _ = r_q q x ∘ r_q p x := by sorry
-
+lemma h_homomor (q p : U) : h (q * p) = h q ∘ h p := by
+  funext x
+  simp [h, r_q, Function.comp_apply]
+  noncomm_ring
 
 
 /-- 長さを変えない isometry -/
-lemma isometry : ‖r_q q x‖ = ‖x.val‖ :=
-  calc
-    ‖r_q q x‖ = ‖q.val * x.val * star q.val‖ := by rw [r_q]
-    _ = ‖q.val‖ * ‖x.val‖ * ‖star q.val‖ := by sorry
-    _ = 1 * ‖x.val‖ * 1 := by
-      have := q.prop.2
+lemma isometry (q : U) (x : PureImaginary) : ‖r_q q x‖ = ‖x.val‖ := by
+  rw [norm_eq, norm_eq]
+  dsimp [r_q]
+  have h_normSq_q : Quaternion.normSq q.val = 1 := by
+    have h := q.2.2
+    exact (congr_arg (fun z : ℍ[ℝ] => z.re) h).trans re_one
+  have h_normSq_star_q : Quaternion.normSq (star q.val) = 1 := by
+    rw [Quaternion.normSq_star]
+    exact h_normSq_q
+  have h_mul : Quaternion.normSq (q.val * x.val * star q.val) = Quaternion.normSq x.val := by
+    rw [map_mul, map_mul, h_normSq_q, h_normSq_star_q, one_mul, mul_one]
+  exact congr_arg Real.sqrt h_mul
 
-    _ = ‖x.val‖ := by rw [mul_one, one_mul]
 
+lemma isometry' (q : U) (x : PureImaginary) : ‖r_q q x‖ = ‖x.val‖ := by
+  have hqSq : Quaternion.normSq q.val = 1 := by
+    rw [Quaternion.normSq_eq_norm_mul_self, q.property]
+    norm_num
+  have hSq : ‖r_q q x‖ * ‖r_q q x‖ = ‖x.val‖ * ‖x.val‖ := by
+    rw [← Quaternion.normSq_eq_norm_mul_self, ← Quaternion.normSq_eq_norm_mul_self]
+    rw [r_q, map_mul, map_mul, hqSq, one_mul, Quaternion.normSq_star, hqSq, mul_one]
+  nlinarith [norm_nonneg (r_q q x), norm_nonneg x.val]
+
+
+lemma isometry' (q : U) (x : PureImaginary) : ‖r_q q x‖ = ‖x.val‖ := by
+  simp only [r_q, norm_eq]
+  have h_norm : ‖q.val‖ = 1 := by
+    have h := q.2.2
+    rw [norm_eq, h]; norm_num
+  have h_star : ‖star q.val‖ = 1 := by
+    have h := q.2.1
+    rw [norm_eq, star_star, h]; norm_num
+  have h₁ : ‖q.val‖ ^ 2 = 1 := by
+    have h := q.2.2
+    rw [norm_eq, h]; norm_num
+  have h₂ : ‖star q.val‖ = 1 := by
+    have h := q.2.1
+    rw [norm_eq, star_star, h]; norm_num
+  have h_mul : ‖q.val * x.val * star q.val‖ ^ 2 = ‖x.val‖ ^ 2 := by
+    sorry
+  sorry
+
+
+lemma isometry'' (q : U) (x : PureImaginary) : ‖r_q q x‖ = ‖x.val‖ := by
+  have h : ‖q.val * x.val * star q.val‖ = ‖q.val * x.val‖ * ‖star q.val‖ := by
+    sorry
+  have h' : ‖q.val * x.val‖ * ‖star q.val‖ = ‖q.val‖ * ‖x.val‖ * ‖star q.val‖ := by
+    sorry
+  have hqSq : Quaternion.normSq q.val = 1 := by
+    rw [Quaternion.normSq_eq_norm_mul_self, q.property]
+    norm_num
+  have hSq : ‖r_q q x‖ * ‖r_q q x‖ = ‖x.val‖ * ‖x.val‖ := by
+    rw [← Quaternion.normSq_eq_norm_mul_self, ← Quaternion.normSq_eq_norm_mul_self]
+    simp [r_q, hqSq]
+  nlinarith [norm_nonneg (r_q q x), norm_nonneg x.val]
 
 
 /-- q = a + bi + cj + dk ∈ U → a² + (b² + c² + d²) = 1 = cos²θ + sin²θ
     a = cosθ, √(b² + c² + d²) = sinθ なる θ ∈ [0, π] がただ一つ定まる.
     ここで, I := (1 / √(b² + c² + d²)) * (bi + cj + dk) = b'i + c'j + d'k (正規化) とする.
     I² = -1 を満たし、虚数単位 i とみなせる. q = cosθ + simθI と表せる.
-    I に沿って,標準直交基底 J, K を作り, それぞれに r_q を作用させる. (四元数の規則を満たす)
+    I に沿って, 標準直交基底 J, K を作り, それぞれに r_q を作用させる. (四元数の規則を満たす)
     r_q q I = I, r_q q J = (cos2θ)J + (sin2θ)K, r_q q K = (-sin2θ)J + (cos2θ)K
     ∴ (r_q q J, r_q q K)ᵗ = !![cos2θ, sin2θ; -sin2θ, cos2θ] * (J, K)ᵗ
     → r_q q x は I で定義される軸の周りに, JK平面(R²) を 2θ 回転させる変換
@@ -466,6 +518,8 @@ lemma isometry : ‖r_q q x‖ = ‖x.val‖ :=
     ker h = {q ∈ U | h q = r_q q x = q * x * qᴴ = x} (SO3 の単位元は恒等変換)
     θ = 0, π のとき i.e. q = -1, 1.
 -/
+
+def I (x : ℍ[ℝ]) : PureImaginary → PureImaginary := x / ‖x‖
 
 
 def minusone : U := ⟨-1, by constructor <;> simp [Quaternion.ext_iff]⟩
