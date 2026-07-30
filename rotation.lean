@@ -7,6 +7,8 @@ open Quaternion Matrix
 noncomputable section
 
 
+abbrev SU (n : ℕ) := specialUnitaryGroup (Fin n) ℂ
+
 /- `Definition14` -/
 /-- SO(3) := {R ∈ O(3) | det R = 1}, O(3) := {Q ∈ GL(3, ℝ) | Qᵗ = Q⁻¹} --/
 abbrev SO (n : ℕ)  := specialOrthogonalGroup (Fin n) ℝ  -- 特殊直交群、回転群
@@ -23,6 +25,20 @@ abbrev U : Submonoid ℍ[ℝ] := unitary ℍ[ℝ]
     ⟹ SU 2 ⧸ ker π ≃* SO 3
     U ≃* SU 2 より, h : U → SO 3, ker h = {-1, 1} を満たす全射準同型があれば, π = h ∘ f⁻¹ (f = U_to_SU 2)
 -/
+
+/-  q = a + bi + cj + dk ∈ U → a² + (b² + c² + d²) = 1 = cos²θ + sin²θ
+    a = cosθ, √(b² + c² + d²) = sinθ なる θ ∈ [0, π] がただ一つ定まる.
+    ここで, I := (1 / √(b² + c² + d²)) * (bi + cj + dk) = b'i + c'j + d'k (正規化) とする.
+    I² = -1 を満たし、虚数単位 i とみなせる. q = cosθ + simθI と表せる.
+    I に沿って, 標準直交基底 J, K を作り, それぞれに r_q を作用させる. (四元数の規則を満たす)
+    r_q q I = I, r_q q J = (cos2θ)J + (sin2θ)K, r_q q K = (-sin2θ)J + (cos2θ)K
+    ∴ (r_q q J, r_q q K)ᵗ = !![cos2θ, sin2θ; -sin2θ, cos2θ] * (J, K)ᵗ
+    → r_q q x は I で定義される軸の周りに, JK平面(R²) を 2θ 回転させる変換
+    軸を一つ決めて(= I), 回転を φ ∈ [0, 2π]とすると, θ = φ/2, q = cos(φ/2) + sin(φ/2)I とすれば
+    SO 3 の任意の元を表せる → 全射性
+    ker h = {q ∈ U | h q = r_q q x = q * x * qᴴ = x} (SO3 の単位元は恒等変換)
+    θ = 0, π のとき i.e. q = -1, 1. -/
+
 
 /-- `実四元数 ℝ`  -/
 def real := {x : ℍ[ℝ] | x.im = 0}-- ∧ x.imJ = 0 ∧ x.imK = 0} -- {x.im = 0}?
@@ -60,8 +76,8 @@ lemma isometry (q : U) (x : PureImaginary) : ‖r_q q x‖ = ‖x.val‖ := by
     rw [Quaternion.normSq_eq_norm_mul_self]
     norm_num
   have hSq : ‖r_q q x‖ * ‖r_q q x‖ = ‖x.val‖ * ‖x.val‖ := by
-    rw [← Quaternion.normSq_eq_norm_mul_self, ← Quaternion.normSq_eq_norm_mul_self]
-    rw [r_q, map_mul, map_mul, hqSq, one_mul, Quaternion.normSq_star, hqSq, mul_one]
+    repeat rw [← Quaternion.normSq_eq_norm_mul_self]
+    rw [r_q, map_mul, map_mul, hqSq, one_mul, normSq_star, hqSq, mul_one]
   nlinarith [norm_nonneg (r_q q x), norm_nonneg x.val]
 
 
@@ -80,15 +96,13 @@ def quaternionAxis (q : U) : ℍ[ℝ] := (imagNorm q)⁻¹ • q.val.im
 
 /-- q ∈ U, normSq = q * star q -/
 lemma unitQuaternion_normSq (q : U) : Quaternion.normSq q.val = 1 := by
-  rw [Quaternion.normSq_eq_norm_mul_self]
-  norm_num
-
+  norm_num [Quaternion.normSq_eq_norm_mul_self]
 
 /-- q = a + bi + cj + dk ∈ U → a² + b² + c² + d² = 1 -/
 lemma unitQuaternion_coordinate_equation (q : U) :
     q.val.re ^ 2 + (q.val.imI ^ 2 + q.val.imJ ^ 2 + q.val.imK ^ 2) = 1 := by
   have := unitQuaternion_normSq q
-  simp [Quaternion.normSq] at this
+  simp [normSq] at this
   linarith
 
 
@@ -104,31 +118,32 @@ lemma quaternionAngle_cos (q : U) : Real.cos (quaternionAngle q) = q.val.re := b
   apply Real.cos_arccos
   · have h := unitQuaternion_normSq q
     simp [Quaternion.normSq] at h
-    nlinarith [sq_nonneg (q.val.re - 1), sq_nonneg (q.val.re + 1)]
+    nlinarith [sq_nonneg (q.val.re + 1)]
   · have h := unitQuaternion_normSq q
     simp [Quaternion.normSq] at h
-    nlinarith [sq_nonneg (q.val.re - 1), sq_nonneg (q.val.re + 1)]
+    nlinarith [sq_nonneg (q.val.re - 1)]
 
 
 /-- q = a + bi + cj + dk ∈ U, sinθ = √(b² + c² + d²) であること -/
 lemma quaternionAngle_sin (q : U) :
     Real.sin (quaternionAngle q) = imagNorm q.val := by
-  rw [quaternionAngle, imagNorm]
-  rw [Real.sin_arccos]
+  rw [quaternionAngle, imagNorm, Real.sin_arccos]
   congr 1
   have h := unitQuaternion_coordinate_equation q
   linarith
 
 
 /-- cosθ = a なる θ ∈ [0, π] が唯一つ定まること -/
-lemma quaternionAngle_unique (q : U) {θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) Real.pi)
+lemma quaternionAngle_unique (q : U) (θ : ℝ) (hθ : θ ∈ Set.Icc (0 : ℝ) Real.pi)
     (hcos : Real.cos θ = q.val.re) : θ = quaternionAngle q := by
   rw [quaternionAngle, ← hcos]
   exact (Real.arccos_cos hθ.1 hθ.2).symm
 
+
 /-- 正規化した回転軸は純虚四元数 -/
 lemma quaternionAxis_re (q : U) : (quaternionAxis q).re = 0 := by
   simp [quaternionAxis]
+
 
 /-- 虚部が0でないならば, 正規化した回転軸は単位ベクトル -/
 lemma quaternionAxis_normSq (q : U) (h : imagNorm q.val ≠ 0) :
@@ -139,11 +154,8 @@ lemma quaternionAxis_normSq (q : U) (h : imagNorm q.val ≠ 0) :
     linarith [sq_nonneg (q.val.imI), sq_nonneg (q.val.imJ), sq_nonneg (q.val.imK)]
   have hsum_pos : q.val.imI ^ 2 + q.val.imJ ^ 2 + q.val.imK ^ 2 > 0 := by
     contrapose! h
-    simp [imagNorm] at h ⊢
-    rw [Real.sqrt_eq_zero_of_nonpos h]
-  simp_rw [show (√(q.val.imI ^ 2 + q.val.imJ ^ 2 + q.val.imK ^ 2))⁻¹ ^ 2 =
-      (q.val.imI ^ 2 + q.val.imJ ^ 2 + q.val.imK ^ 2)⁻¹ by
-    rw [inv_pow, Real.sq_sqrt hsum]]
+    rw [imagNorm, Real.sqrt_eq_zero_of_nonpos h]
+  rw [inv_pow, Real.sq_sqrt hsum]
   field_simp
 
 
@@ -156,7 +168,7 @@ lemma quaternionAxis_sq (q : U) (h : imagNorm q.val ≠ 0) :
   simp [Quaternion.normSq] at hNorm
   rw [hRe] at hNorm
   simp [Quaternion.ext_iff, hRe]
-  refine ⟨by linarith, by ring, by ring, by ring⟩
+  exact ⟨by linarith, by ring, by ring, by ring⟩
 
 
 /-- q ∈ U (虚部が0でない) は q = cosθ + sinθI (θ ∈ [0, π]) と表せる -/
@@ -164,8 +176,8 @@ lemma unitQuaternion_axis_angle (q : U) (h : imagNorm q.val ≠ 0) :
     q.val = (Real.cos (quaternionAngle q) : ℍ[ℝ]) +
       Real.sin (quaternionAngle q) • quaternionAxis q := by
   rw [quaternionAngle_cos, quaternionAngle_sin, quaternionAxis]
-  rw [smul_smul, mul_inv_cancel₀ h]
-  simp
+  rw [smul_smul, mul_inv_cancel₀ h, one_smul, re_add_im]
+
 
 /-- 四元数の正規直交基底とその乗法規則. I を固定し, それに準じて J, K を作れる
 `I² = J² = K² = -1` and `IJ = K`, `JK = I`, `KI = J`. -/
@@ -185,6 +197,7 @@ structure QuaternionFrame where
   KJ : K * J = -I
   KI : K * I = J
   IK : I * K = -J
+  -- `IJK : I * J * K = -1`
 
 
 /-- 上の基底を F とし, q ∈ U を改めて定める -/
@@ -200,16 +213,13 @@ lemma frameQuaternion_star (F : QuaternionFrame) (θ : ℝ) :
 /-- q = cosθ + sinθI → ‖q‖² = 1 → q ∈ U -/
 lemma frameQuaternion_normSq (F : QuaternionFrame) (θ : ℝ) :
     Quaternion.normSq (frameQuaternion F θ) = 1 := by
-  rw [Quaternion.normSq_def]
-  rw [frameQuaternion_star]
-  simp only [frameQuaternion, mul_sub, add_mul, Quaternion.re_add, Quaternion.re_sub,
+  rw [Quaternion.normSq_def, frameQuaternion_star]
+  simp [frameQuaternion, mul_sub, add_mul, Quaternion.re_add, Quaternion.re_sub,
     Quaternion.re_mul, Quaternion.re_smul, Quaternion.re_coe, Quaternion.imI_coe,
-    Quaternion.imJ_coe, Quaternion.imK_coe, Quaternion.imI_smul, Quaternion.imJ_smul,
-    Quaternion.imK_smul, zero_mul, mul_zero, sub_zero]
+    Quaternion.imJ_coe, Quaternion.imK_coe, zero_mul, mul_zero, sub_zero]
   have hs := congrArg (fun x : ℍ[ℝ] => x.re) F.I_sq
   have hr := congrArg (fun x : ℍ[ℝ] => x.re) F.star_I
   simp only [Quaternion.re_mul, Quaternion.re_neg, Quaternion.re_one, Quaternion.re_star] at hs hr
-  norm_num at hs hr ⊢
   nlinarith [Real.sin_sq_add_cos_sq θ]
 
 
@@ -307,6 +317,15 @@ lemma frame_conj_K (F : QuaternionFrame) (θ : ℝ) :
   module
 
 
+lemma frameQuaternion_norm (F : QuaternionFrame) (θ : ℝ) :
+    ‖frameQuaternion F θ‖ = 1 := by
+  have h := frameQuaternion_normSq F θ
+  rw [Quaternion.normSq_eq_norm_mul_self] at h
+  have := mul_self_eq_one_iff (a := ‖frameQuaternion F θ‖)
+  rw [this] at h
+  rcases h with h | h <;> linarith [norm_nonneg (frameQuaternion F θ)]
+
+
 /-- 3次元空間における「任意の軸u周りの角度φの回転」は, 対応する単位四元数 q = cos(φ/2) + sin(φ/2)u
     による共役作用 x ↦ q * x * star q として表せる. 全射性 -/
 theorem frameRotation_represented (F : QuaternionFrame) (φ : ℝ) :
@@ -315,12 +334,12 @@ theorem frameRotation_represented (F : QuaternionFrame) (φ : ℝ) :
       q.val * F.I * star q.val = F.I ∧
       q.val * F.J * star q.val = Real.cos φ • F.J + Real.sin φ • F.K ∧
       q.val * F.K * star q.val = (-Real.sin φ) • F.J + Real.cos φ • F.K := by
-  let q : U := ⟨frameQuaternion F (φ / 2), by sorry⟩
-    -- have hs : ‖frameQuaternion F (φ / 2)‖ * ‖frameQuaternion F (φ / 2)‖ = 1 := by
-    --   rw [← Quaternion.normSq_eq_norm_mul_self]
-    --   exact frameQuaternion_normSq F (φ / 2)
-    -- have hnonneg : 0 ≤ ‖frameQuaternion F (φ / 2)‖ := norm_nonneg _
-    -- nlinarith⟩
+  let q : U := ⟨frameQuaternion F (φ / 2), by
+    have hs : ‖frameQuaternion F (φ / 2)‖ * ‖frameQuaternion F (φ / 2)‖ = 1 := by
+      rw [← Quaternion.normSq_eq_norm_mul_self]
+      exact frameQuaternion_normSq F (φ / 2)
+    constructor <;> simp only [star_mul_self, self_mul_star]
+    <;> simp only [normSq_eq_norm_mul_self, hs, coe_one]⟩
   refine ⟨q, rfl, ?_, ?_, ?_⟩
   · exact frame_conj_I F (φ / 2)
   · simpa only [show 2 * (φ / 2) = φ by ring] using frame_conj_J F (φ / 2)
@@ -333,8 +352,8 @@ lemma conjugation_kernel (q : U) :
       q.val = (1 : ℍ[ℝ]) ∨ q.val = (-1 : ℍ[ℝ]) := by
   constructor
   · intro h
-    let hI : PureImaginary := ⟨(⟨0, 1, 0, 0⟩ : Quaternion ℝ), by rfl⟩
-    let hJ : PureImaginary := ⟨(⟨0, 0, 1, 0⟩ : Quaternion ℝ), by rfl⟩
+    let hI : PureImaginary := ⟨(⟨0, 1, 0, 0⟩ : ℍ[ℝ]), by rfl⟩
+    let hJ : PureImaginary := ⟨(⟨0, 0, 1, 0⟩ : ℍ[ℝ]), by rfl⟩
     have hqI : q.val * ⟨0, 1, 0, 0⟩ * star q.val = ⟨0, 1, 0, 0⟩ := by
       have := h hI; simp [r_q] at this; exact this
     have hqJ : q.val * ⟨0, 0, 1, 0⟩ * star q.val = ⟨0, 0, 1, 0⟩ := by
@@ -359,8 +378,11 @@ lemma conjugation_kernel (q : U) :
     have h_imK : q.val.imK = 0 := by linarith
     have h_imJ : q.val.imJ = 0 := by linarith
     have h_imI : q.val.imI = 0 := by linarith
-    simp [Quaternion.normSq_def] at hq_normSq
-    have h_re_sq : q.val.re ^ 2 = 1 := by sorry -- linarith
+    have h_re_sq : q.val.re ^ 2 = 1 := by
+      have := unitQuaternion_coordinate_equation q
+      rw [h_imI, h_imJ, h_imK, zero_pow, add_zero, add_zero, add_zero] at this
+      exact this
+      norm_num
     have h_re : q.val.re = 1 ∨ q.val.re = -1 := sq_eq_one_iff.mp h_re_sq
     rcases h_re with h_re | h_re
     · left; exact Quaternion.ext_iff.mpr ⟨h_re, h_imI, h_imJ, h_imK⟩
@@ -369,5 +391,36 @@ lemma conjugation_kernel (q : U) :
     rcases h with hq | hq <;> simp [r_q, hq]
 
 
+def minusone : U := ⟨-1, by constructor <;> simp⟩
+
+def plusminusone : Subgroup U := Subgroup.closure {minusone}
+
+
+/- `Theorem15`-/
+def minusI : SU 2 := ⟨-1, by
+  constructor
+  · simp [Matrix.mem_unitaryGroup_iff]
+  · simp [Matrix.det_fin_two]⟩
+
+
+/- {I, -I} : -I によって生成される最小の部分群 -/
+def plusminusI : Subgroup (SU 2) := Subgroup.closure {minusI}
+
+
+lemma pre15 : ∃ h : U →* SO 3, Function.Surjective h ∧ h.ker = plusminusone := by
+  sorry
+
+
+/-- π = h ∘ f⁻¹ : SU 2 → U → SO3, f = U_to_SU2 -/
+theorem theorem_15 : ∃ π : SU 2 →* SO 3, Function.Surjective π ∧ π.ker = plusminusI := by
+  sorry
+
+
+def theorem15 [plusminusI.Normal] (π : SU 2 →* SO 3) (surj : Function.Surjective π)
+    (kern : π.ker = plusminusI) : SU 2 ⧸ plusminusI ≃* SO 3 :=
+  (QuotientGroup.quotientMulEquivOfEq kern.symm).trans (QuotientGroup.quotientKerEquivOfSurjective π surj)
+
+
+end
 
 #min_imports
