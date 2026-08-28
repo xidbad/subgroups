@@ -293,15 +293,12 @@ lemma frame_conj_K (F : QuaternionFrame) (θ : ℝ) :
   rw [F.KI]
   simp
   rw [F.IJ]
-  -- Goal: quaternion times real scalar needs simplification
-  -- Quaternion * real = real • Quaternion
   have h1 : ∀ (q : ℍ[ℝ]) (r : ℝ), q * ↑r = r • q := by
     intro q r
     rw [show (r : ℍ[ℝ]) = r • (1 : ℍ[ℝ]) by simp [Quaternion.ext_iff]]
     rw [mul_smul_comm, mul_one]
   rw [h1 (F.K) (Real.cos θ)]
   simp
-  -- Need: r • q = q * r, which follows from h1 if we can show commutativity for scalars
   have h2 : ∀ (q : ℍ[ℝ]) (r : ℝ), ↑r * q = r • q := by
     intro q r
     rw [show (r : ℍ[ℝ]) = r • (1 : ℍ[ℝ]) by simp [Quaternion.ext_iff]]
@@ -310,7 +307,6 @@ lemma frame_conj_K (F : QuaternionFrame) (θ : ℝ) :
   rw [h2 (F.J) (Real.cos θ)]
   rw [F.IK]
   simp [smul_smul]
-  -- Now need to use trig identities: cos²θ - sin²θ = cos(2θ), 2sinθ cosθ = sin(2θ)
   have sin2θ : Real.sin (2 * θ) = 2 * Real.sin θ * Real.cos θ := Real.sin_two_mul θ
   have cos2θ : Real.cos (2 * θ) = Real.cos θ ^ 2 - Real.sin θ ^ 2 := Real.cos_two_mul' θ
   rw [sin2θ, cos2θ]
@@ -348,8 +344,7 @@ theorem frameRotation_represented (F : QuaternionFrame) (φ : ℝ) :
 
 /-- ker h = {-1, 1} であること, 回転群の単位元は恒等変換 -/
 lemma conjugation_kernel (q : U) :
-    (∀ x : PureImaginary, r_q q x = x.val) ↔
-      q.val = (1 : ℍ[ℝ]) ∨ q.val = (-1 : ℍ[ℝ]) := by
+    (∀ x : PureImaginary, r_q q x = x.val) ↔ q.val = (1 : ℍ[ℝ]) ∨ q.val = (-1 : ℍ[ℝ]) := by
   constructor
   · intro h
     let hI : PureImaginary := ⟨(⟨0, 1, 0, 0⟩ : ℍ[ℝ]), by rfl⟩
