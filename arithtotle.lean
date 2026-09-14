@@ -2,26 +2,7 @@ import Mathlib.Analysis.Quaternion
 import Mathlib.LinearAlgebra.UnitaryGroup
 import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 
-/-!
-このファイルは単体で完結しています（他のプロジェクト内ファイルを import しません）。
-補助的な名前空間 ``（四元数の共役作用の行列表示）と `SU`（SU(2) と単位四元数の対応）
-を先に定義し、そのあとで元の内容と `pre15` / `theorem_15` の証明を置いています。
--/
 
-
-/-!
-# The rotation attached to a quaternion
-
-For a quaternion `q`, conjugation `x ↦ q * x * star q` preserves the purely imaginary
-quaternions, which we identify with `ℝ³` via the basis `𝑖, 𝑗, 𝑘`.  This file defines the
-resulting `ℝ`-linear endomorphism `.conjLin q` of `ℝ³` and its matrix
-`.conjMatrix q` (the matrix is *not* postulated by an ad-hoc formula: it is the matrix
-of the conjugation map, obtained through `LinearMap.toMatrix'`; the explicit entries are then
-computed in `conjMatrix_eq`).
-
-We prove that the assignment is multiplicative, that for a unit quaternion the matrix lies in
-`SO(3)`, that its kernel is `{1, -1}`, and that it is surjective onto `SO(3)`.
--/
 
 open Quaternion Matrix
 
