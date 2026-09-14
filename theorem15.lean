@@ -3,7 +3,6 @@ import Mathlib.LinearAlgebra.UnitaryGroup
 import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 
 
-
 open Quaternion Matrix
 
 noncomputable section
@@ -1037,7 +1036,7 @@ theorem eq_neg_one_of_det_one_of_sq_eq_one
 
 /-- **Proposition 16.** Let `U ∈ SU(2)` be of order `2`.  Then `U = -I₂`.
 In other words, `-I₂` is the unique element of order `2` in `SU(2)`. -/
-theorem su_two_orderOf_eq_two (U : Matrix.specialUnitaryGroup (Fin 2) ℂ) (hU : orderOf U = 2) :
+theorem prop16 (U : Matrix.specialUnitaryGroup (Fin 2) ℂ) (hU : orderOf U = 2) :
     (U : Matrix (Fin 2) (Fin 2) ℂ) = -1 := by
   have hsq : U ^ 2 = 1 := by
     have h := pow_orderOf_eq_one U
@@ -1057,30 +1056,6 @@ theorem su_two_orderOf_eq_two (U : Matrix.specialUnitaryGroup (Fin 2) ℂ) (hU :
     exact hne (Subtype.ext h)
   exact eq_neg_one_of_det_one_of_sq_eq_one _ hdet hsq' hne'
 
-
-/-- Conversely, `-I₂` really is an element of `SU(2)` of order `2`, so Proposition 16 says
-precisely that it is the unique such element. -/
-theorem neg_one_mem_su_two_and_orderOf_eq_two :
-    ∃ U : Matrix.specialUnitaryGroup (Fin 2) ℂ,
-      (U : Matrix (Fin 2) (Fin 2) ℂ) = -1 ∧ orderOf U = 2 := by
-  have hmem : (-1 : Matrix (Fin 2) (Fin 2) ℂ) ∈ Matrix.specialUnitaryGroup (Fin 2) ℂ := by
-    rw [Matrix.mem_specialUnitaryGroup_iff]
-    constructor
-    · rw [Matrix.mem_unitaryGroup_iff]
-      simp
-    · simp [Matrix.det_fin_two]
-  refine ⟨⟨-1, hmem⟩, rfl, ?_⟩
-  have hne : (⟨-1, hmem⟩ : Matrix.specialUnitaryGroup (Fin 2) ℂ) ≠ 1 := by
-    intro h
-    have := congrArg (fun x : Matrix.specialUnitaryGroup (Fin 2) ℂ =>
-      (x : Matrix (Fin 2) (Fin 2) ℂ) 0 0) h
-    simp at this
-    norm_num at this
-  have hsq : (⟨-1, hmem⟩ : Matrix.specialUnitaryGroup (Fin 2) ℂ) ^ 2 = 1 := by
-    apply Subtype.ext
-    show (-1 : Matrix (Fin 2) (Fin 2) ℂ) ^ 2 = 1
-    simp
-  exact orderOf_eq_prime hsq hne
 
 
 
