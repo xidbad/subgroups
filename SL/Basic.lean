@@ -1,3 +1,4 @@
+import SL.Common
 import Mathlib.Algebra.Order.Ring.Star
 import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 import Mathlib.Data.Int.Star
@@ -324,8 +325,7 @@ def BI120_subgroup : Subgroup SL(2, ℂ) where
 
 
 -- [SU(2)の性質] --
-
-def SU (n : ℕ) := specialUnitaryGroup (Fin n) ℂ
+-- `SU` の定義は `SL.Common` を参照（import 経由）
 
 def SU2_subgroup : Subgroup SL(2, ℂ) where
   carrier := {M : SL(2, ℂ) | M.val ∈ SU 2}  -- SU(2) の行列を SL(2, ℂ) の部分集合として定義

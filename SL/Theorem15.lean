@@ -1,3 +1,4 @@
+import SL.Common
 import Mathlib.Analysis.Quaternion
 import Mathlib.LinearAlgebra.UnitaryGroup
 import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
@@ -417,19 +418,6 @@ lemma eq_neg_one_of_toQuat_eq_neg_one {A : Matrix (Fin 2) (Fin 2) ℂ}
 
 
 
-
-
-abbrev SU (n : ℕ) := specialUnitaryGroup (Fin n) ℂ
-
-/- `Definition14` -/
-/-- SO(3) := {R ∈ O(3) | det R = 1}, O(3) := {Q ∈ GL(3, ℝ) | Qᵗ = Q⁻¹} --/
-abbrev SO (n : ℕ)  := specialOrthogonalGroup (Fin n) ℝ  -- 特殊直交群、回転群
-
-
--- abbrev U := {q : ℍ[ℝ] | ‖q‖ = 1}
-
--- 単位四元数 : {q ∈ ℍ[ℝ] | q * star q = 1}
-abbrev U : Submonoid ℍ[ℝ] := unitary ℍ[ℝ]
 
 
 /- `Theorem15`

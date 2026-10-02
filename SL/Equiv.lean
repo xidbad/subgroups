@@ -1,3 +1,4 @@
+import SL.Common
 import Mathlib.Algebra.Quaternion
 import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 import Mathlib.Analysis.CStarAlgebra.Classes
@@ -18,10 +19,6 @@ variable (G : Subgroup SL(2, ℂ)) [Fintype G]
 
 
 notation "⟪"u", "v"⟫" => star u ⬝ᵥ v  -- 標準内積
-
-/- `Definition8` -/
-abbrev SU (n : ℕ) := specialUnitaryGroup (Fin n) ℂ
-
 
 /- `Proposition10` -/
 /-- 部分群 `G ≤ SL(2, ℂ)` の `ℂ² = (Fin 2 → ℂ)` 上への標準表現：
@@ -249,11 +246,6 @@ end Quaternion
 /- `Proposition13` -/
 -- 3次元球面 : {(x₁, x₂, x₃, x₄) ∈ ℝ⁴ | x₁² + x₂² + x₃² + x₄² = 1}
 abbrev S₃ := {x : Fin 4 → ℝ | (x 0) ^ 2 + (x 1) ^ 2 + (x 2) ^ 2 + (x 3) ^ 2 = 1}
-
--- 単位四元数 : {q ∈ ℍ[ℝ] | q * star q = 1}
-abbrev U : Submonoid ℍ[ℝ] := unitary ℍ[ℝ]
-
-
 
 /- `SU 2 ↦ S₃` -/
 /- SU 2 = {!![a, b; -star b, star a] | a, b ∈ ℂ, |a|² + |b|² = 1}

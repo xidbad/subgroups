@@ -7,23 +7,57 @@ by Javier Carrasco Serrano (Warwick, 2014), supervised by Miles Reid.
 
 | File | Content | Status |
 |------|---------|--------|
-| `SL/Basic.lean` | Cyclic, binary dihedral, BT24, BO48, BI120, SU2 subgroup defs | Compiles OK |
-| `equiv.lean` | Average inner product, SU2 ≃ S³, SU2 ≃* U, quaternions | Compiles OK |
-| `rotation.lean` | SU(2) → SO(3) cover, quaternion axis-angle, frame | 2 `sorry`s remain |
-| `Main.lean` | Stub | Incomplete |
+| `SL/Basic.lean` | Cyclic, binary dihedral, BT24, BO48, BI120, SU2 subgroup defs | Compiles OK, included in `lake build` |
+| `subgroups.lean` | **Duplicate of `SL/Basic.lean`** (byte-identical) | Orphan — not built |
+| `equiv.lean` | Average inner product, SU2 ≃ S³, SU2 ≃* U, quaternions | Compiles OK but orphan — not built |
+| `rotation.lean` | SU(2) → SO(3) cover, quaternion axis-angle, frame | 2 `sorry`s remain; orphan — not built |
+| `theorem15.lean` | Complete proof of Theorem 15 (SU2 → SO3 cover, `hMat`, `hMat_ker`, `prop16`) | Compiles OK but orphan — not built |
+| `Main.lean` | Stub (`Hello!`) | Builds |
+
+**Key findings (2026-10-02):**
+
+1. `lake build` は `Main.lean` / `SL.lean` / `SL/Basic.lean` しかビルドしない。ルートの `equiv.lean` / `rotation.lean` / `subgroups.lean` / `theorem15.lean` はライブラリに組み込まれておらず、破損しても検出されない。
+2. `subgroups.lean` は `SL/Basic.lean` と完全に同一の重複ファイル。
+3. `rotation.lean` の `pre15` / `theorem_15` の 2 つの `sorry` は、`theorem15.lean` 内で既に `hMat_ker`・`theorem_15` として証明済み。宣言名もほぼ衝突するため、そのまま併存できない。
+4. `equiv.lean` / `rotation.lean` / `theorem15.lean` は `abbrev SU` / `abbrev SO` / `abbrev U` などの共通定義を三重に定義している → 単一モジュールに統合しないと同一ビルドに入れられない。
+5. `Main.lean` がスタブのまま。
+6. 本ファイルの Phase 1 の記述（rotation.lean に sorry が残る）は実情とずれている。
 
 ---
 
-## Phase 1: Fill `sorry`s in `rotation.lean`
+## 修正計画 (2026-10-02)
 
-**Goal**: Prove the two remaining theorems that establish the SU(2) → SO(3) double cover.
+### M1. 重複・旧版ファイルの整理
+- `subgroups.lean` を削除（`SL/Basic.lean` と同一のため、必要なら git 履歴から参照可能）。
+- `rotation.lean` を削除し、`theorem15.lean` の完成版を正規実装とする（`pre15` / `theorem_15` / `theorem15` は `theorem15.lean` が既に証明済み）。
 
-- `pre15`: `∃ h : U →* SO 3, Function.Surjective h ∧ h.ker = {±1}`
-  - Prove `h` is surjective (every rotation lifts to a unit quaternion)
-  - Prove `ker h = {1, -1}` (only ±1 act trivially)
-- `theorem_15`: `∃ π : SU 2 →* SO 3, Function.Surjective π ∧ π.ker = {±I}`
-  - Compose `h ∘ (U_to_SU2)⁻¹` to get the map from SU(2)
-- `theorem15`: Under normality of `{±I}`, prove `SU 2 ⧸ {±I} ≃* SO 3`
+### M2. モジュール構成の正規化
+- `equiv.lean` → `SL/Equiv.lean`、`theorem15.lean` → `SL/Theorem15.lean` に移動し、`SL.lean` から import する。
+- 重複する共通定義（`abbrev SU`, `SO`, `U`, `plusminusI`, `PureImaginary`, `r_q`, `h` 等）を `SL/Common.lean`（仮）に集約し、各モジュールはそこから import する。
+- `lake build` が全ファイルを対象とすることを確認する（`lake build` のジョブリストに `SL.Equiv` 等が現れること）。
+
+### M3. Main.lean の実装
+- 全ライブラリモジュールを import し、簡単な確認用エントリにする（例: 定理名の一覧表示、`SL.Basic` の群のカーディナリティ確認など）。
+
+### M4. plan.md の実情への更新
+- Current Status 表を上記 Findings の通り更新済み（本コミットで反映）。
+- Phase 1 を「`theorem15.lean` により実質完了（`hMat_ker`, `theorem_15`, `theorem15`, `prop16` が成立）」に書き換え。残作業は M1/M2 の移設のみと明記。
+
+### M5. 品質ゲート
+- ルートに放置された `.lean` ファイルを残さない運用にする（`SL/` 配下に統一）。
+- PR 時は `lake build` 成功＋`sorry` ゼロ（Phase 1 目標）を確認。必要に応じて CI (`lake build`) を GitHub Actions に追加。
+
+---
+
+## Phase 1: Fill `sorry`s in `rotation.lean` — 実質完了
+
+> **更新 (2026-10-02)**: `theorem15.lean` が完成しており、`pre15`（`hMat_ker`, `hMat_surjective`）・`theorem_15`・`theorem15`・`prop16` が `sorry` なしで証明されている。`rotation.lean` の 2 つの `sorry` はもう埋める必要はなく、ファイルごと削除して `theorem15.lean` を正規版とする方針（M1/M2 参照）。
+
+- `pre15`: `∃ h : U →* SO 3, Function.Surjective h ∧ h.ker = {±1}` ✅ （`theorem15.lean`: `⟨hMat, hMat_surjective, hMat_ker⟩`）
+- `theorem_15`: `∃ π : SU 2 →* SO 3, Function.Surjective π ∧ π.ker = {±I}` ✅ （`theorem15.lean` 946行目）
+- `theorem15`: Under normality of `{±I}`, prove `SU 2 ⧸ {±I} ≃* SO 3` ✅
+
+残作業: `rotation.lean` の削除と `SL/Theorem15.lean` への移設（M1/M2）。
 
 ---
 
