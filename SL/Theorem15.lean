@@ -294,8 +294,6 @@ theorem exists_conjMatrix {R : Matrix (Fin 3) (Fin 3) ℝ}
   · rw [conjMatrix_mul, hq₂R, hNdef, ← Matrix.mul_assoc, ← hMdef, hM', Matrix.one_mul]
 
 
-
-
 /-!
 # `SU(2)` and the unit quaternions
 
@@ -414,10 +412,6 @@ lemma eq_neg_one_of_toQuat_eq_neg_one {A : Matrix (Fin 2) (Fin 2) ℂ}
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [ha, hb, h11, h10]
-
-
-
-
 
 
 /- `Theorem15`
@@ -960,6 +954,7 @@ instance plusminusI_normal : plusminusI.Normal := by
   rw [← kern]
   infer_instance
 
+
 /-- `Theorem15` の結論 : `SU(2) / {±I} ≃ SO(3)` -/
 theorem SU2_quotient_mulEquiv_SO3 : Nonempty (SU 2 ⧸ plusminusI ≃* SO 3) := by
   obtain ⟨π, surj, kern⟩ := theorem_15
@@ -1038,7 +1033,6 @@ theorem prop16 (U : Matrix.specialUnitaryGroup (Fin 2) ℂ) (hU : orderOf U = 2)
     intro h
     exact hne (Subtype.ext h)
   exact eq_neg_one_of_det_one_of_sq_eq_one _ hdet hsq' hne'
-
 
 
 
