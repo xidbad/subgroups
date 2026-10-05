@@ -967,12 +967,8 @@ theorem SU2_quotient_mulEquiv_SO3 : Nonempty (SU 2 ⧸ plusminusI ≃* SO 3) := 
 
 
 
-
-/-- **Key algebraic step.** A `2 × 2` complex matrix of determinant `1` which squares to the
-identity and is not the identity must be `-I₂`.
-This is the computation in the proof of Proposition 16: writing `M = !![a, b; -b̄, ā]`, the
-condition `M ^ 2 = I₂` forces `b = 0` and `a = ±1`.  (Only `det M = 1` is needed; unitarity of
-`M` is not used.) -/
+/-- 行列式が1の2×2複素行列で、2乗が単位行列になるものでかつ単位行列出ないものは -I₂のみ
+    M = !![a, b; -b̄, ā] と表したとき、条件 M ^ 2 = I₂ から b = 0 かつ a = ±1 が導かれる -/
 theorem eq_neg_one_of_det_one_of_sq_eq_one
     (M : Matrix (Fin 2) (Fin 2) ℂ) (hdet : M.det = 1) (hsq : M * M = 1) (hne : M ≠ 1) :
     M = -1 := by
@@ -1022,8 +1018,7 @@ theorem eq_neg_one_of_det_one_of_sq_eq_one
     fin_cases i <;> fin_cases j <;> simp
 
 
-/-- **Proposition 16.** Let `U ∈ SU(2)` be of order `2`.  Then `U = -I₂`.
-In other words, `-I₂` is the unique element of order `2` in `SU(2)`. -/
+/-- U ∈ SU(2), order U = 2 ならば U = -I₂ -/
 theorem prop16 (U : Matrix.specialUnitaryGroup (Fin 2) ℂ) (hU : orderOf U = 2) :
     (U : Matrix (Fin 2) (Fin 2) ℂ) = -1 := by
   have hsq : U ^ 2 = 1 := by
